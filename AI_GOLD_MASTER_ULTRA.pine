@@ -1,0 +1,1489 @@
+//@version=6
+indicator("🏆 AI GOLD MASTER", overlay=true, max_lines_count=500, max_boxes_count=500, max_labels_count=500)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎨 CONFIGURATION GLOBALE / GLOBAL CONFIGURATION
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Mode de trading
+modeGroup = "💠 MODE & STRATÉGIE"
+tradingMode = input.string("Pro", "Mode Trading", options=["Pro", "Agressif"], group=modeGroup)
+strategyType = input.string("Swing", "Type Stratégie", options=["Scalping", "Swing", "Intraday"], group=modeGroup)
+autoTune = input.bool(true, "Auto-Tune Modules", tooltip="Optimise automatiquement les paramètres selon la stratégie", group=modeGroup)
+
+// 💰 GESTION DU RISQUE / RISK MANAGEMENT
+riskGroup = "💰 GESTION DU RISQUE"
+capitalInput = input.float(10000, "Capital ($)", minval=100, group=riskGroup)
+riskPercentInput = input.float(2.0, "Risque par Trade (%)", minval=0.1, maxval=10, step=0.1, group=riskGroup)
+
+// 📐 EMAs 50/100/200
+emaGroup = "📐 EMAs 50/100/200"
+emaShow = input.bool(true, "Visibilité", inline="ema1", group=emaGroup)
+emaImpact = input.bool(true, "Impact Confluence", inline="ema1", group=emaGroup)
+ema50Period = autoTune ? (strategyType == "Scalping" ? 20 : strategyType == "Intraday" ? 50 : 50) : input.int(50, "EMA 50", group=emaGroup)
+ema100Period = autoTune ? (strategyType == "Scalping" ? 50 : strategyType == "Intraday" ? 100 : 100) : input.int(100, "EMA 100", group=emaGroup)
+ema200Period = autoTune ? (strategyType == "Scalping" ? 100 : strategyType == "Intraday" ? 200 : 200) : input.int(200, "EMA 200", group=emaGroup)
+
+// ⚡ EMA9 MOMENTUM
+ema9Group = "⚡ EMA9 MOMENTUM"
+ema9Show = input.bool(true, "Visibilité", inline="ema9", group=ema9Group)
+ema9Impact = input.bool(true, "Impact Confluence", inline="ema9", group=ema9Group)
+ema9Period = autoTune ? (strategyType == "Scalping" ? 5 : strategyType == "Intraday" ? 9 : 9) : input.int(9, "Période EMA9", group=ema9Group)
+
+// 📍 VWAP
+vwapGroup = "📍 VWAP"
+vwapShow = input.bool(true, "Visibilité", inline="vwap", group=vwapGroup)
+vwapImpact = input.bool(true, "Impact Confluence", inline="vwap", group=vwapGroup)
+
+// 📈 SUPERTREND
+stGroup = "📈 SUPERTREND"
+stShow = input.bool(true, "Visibilité", inline="st1", group=stGroup)
+stImpact = input.bool(true, "Impact Confluence", inline="st1", group=stGroup)
+stPeriod = autoTune ? (strategyType == "Scalping" ? 7 : strategyType == "Intraday" ? 10 : 10) : input.int(10, "Période", group=stGroup)
+stMultiplier = autoTune ? (strategyType == "Scalping" ? 2.0 : strategyType == "Intraday" ? 3.0 : 3.0) : input.float(3.0, "Multiplicateur", group=stGroup)
+
+// 📈 FIBONACCI AUTO
+fiboGroup = "📈 FIBONACCI AUTO"
+fiboShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", inline="fibo1", group=fiboGroup)
+fiboImpact = input.bool(true, "Impact Confluence", inline="fibo1", group=fiboGroup)
+fiboLookback = input.int(50, "Lookback Impulses", minval=10, maxval=200, group=fiboGroup)
+
+// 🔔 SQUEEZE
+squeezeGroup = "🔔 SQUEEZE"
+squeezeShow = input.bool(true, "Afficher Squeeze", group=squeezeGroup)
+squeezeBBLength = input.int(20, "BB Length", group=squeezeGroup)
+squeezeBBMult = input.float(2.0, "BB Mult", group=squeezeGroup)
+squeezeKCLength = input.int(20, "KC Length", group=squeezeGroup)
+squeezeKCMult = input.float(1.5, "KC Mult", group=squeezeGroup)
+
+// 🟦 DAILY OPEN
+dailyGroup = "🟦 DAILY OPEN"
+dailyShow = input.bool(true, "Visibilité", inline="daily1", group=dailyGroup)
+dailyImpact = input.bool(false, "Impact Confluence", inline="daily1", group=dailyGroup)
+
+// 🕯️ ENGULFING
+engulfingGroup = "🕯️ ENGULFING"
+engulfingShow = input.bool(true, "Visibilité", group=engulfingGroup)
+engulfingMinSize = input.float(1.5, "Ratio Min Taille", minval=1.0, maxval=5.0, step=0.1, group=engulfingGroup)
+
+// 🔹 STRUCTURE HH/HL/LL/LH
+structureGroup = "🔹 STRUCTURE"
+structureShow = input.bool(true, "Visibilité", group=structureGroup)
+structureLookback = input.int(10, "Lookback", minval=5, maxval=50, group=structureGroup)
+
+// 🧱 ORDER BLOCKS
+obGroup = "🧱 ORDER BLOCKS"
+obShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", group=obGroup)
+obImpact = input.bool(true, "Impact Confluence", group=obGroup)
+
+// 📐 SMC/MSS/BOS
+smcGroup = "📐 SMC/MSS/BOS"
+smcShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", group=smcGroup)
+smcImpact = input.bool(true, "Impact Confluence", group=smcGroup)
+
+// 💠 LIQUIDITY POOLS & EQH/EQL
+liqGroup = "💠 LIQUIDITY POOLS"
+liqShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", group=liqGroup)
+liqImpact = input.bool(true, "Impact Confluence", group=liqGroup)
+liqThreshold = input.float(0.2, "Seuil (%)", minval=0.05, maxval=1.0, step=0.05, group=liqGroup)
+
+// 💎 FVG (Fair Value Gaps)
+fvgGroup = "💎 FVG"
+fvgShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", group=fvgGroup)
+fvgImpact = input.bool(true, "Impact Confluence", group=fvgGroup)
+fvgMinSize = input.float(0.5, "Taille Min (%)", minval=0.1, maxval=2.0, step=0.1, group=fvgGroup)
+
+// 📊 ADR/ATR FILTER
+atrGroup = "📊 ADR/ATR FILTER"
+atrShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", group=atrGroup)
+adrLength = input.int(14, "ADR Période", group=atrGroup)
+atrLength = input.int(14, "ATR Période", group=atrGroup)
+
+// 📅 PDH/PDL/IB + WEEKLY OHLC
+pdhGroup = "📅 PDH/PDL/WEEKLY"
+pdhShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", group=pdhGroup)
+showPDH = input.bool(true, "PDH", inline="pdh1", group=pdhGroup)
+showPDL = input.bool(true, "PDL", inline="pdh1", group=pdhGroup)
+showPWH = input.bool(true, "PWH", inline="pdh2", group=pdhGroup)
+showPWL = input.bool(true, "PWL", inline="pdh2", group=pdhGroup)
+
+// 📊 VOLUME CONTROL
+volGroup = "📊 VOLUME CONTROL"
+volShow = input.bool(true, "Afficher Volume %", group=volGroup)
+volImpact = input.bool(true, "Impact Confluence", group=volGroup)
+
+// 💠 RSI DIVERGENCE MTF
+rsiDivGroup = "💠 RSI DIVERGENCE MTF"
+rsiDivShow = input.bool(true, "Visibilité", group=rsiDivGroup)
+rsiDivImpact = input.bool(true, "Impact Confluence", group=rsiDivGroup)
+rsiLength = input.int(14, "RSI Période", group=rsiDivGroup)
+rsiDivLookback = input.int(50, "Lookback", group=rsiDivGroup)
+
+// 📈 TREND LINES AUTO
+trendLineGroup = "📈 TREND LINES AUTO"
+trendLineShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", group=trendLineGroup)
+trendLineImpact = input.bool(true, "Impact Confluence", group=trendLineGroup)
+
+// 🚩 FLAGS & BREAKOUTS
+flagGroup = "🚩 FLAGS & BREAKOUTS"
+flagShow = input.bool(false, "Visibilité", tooltip="Caché par défaut", group=flagGroup)
+flagImpact = input.bool(true, "Impact Confluence", group=flagGroup)
+
+// 🎨 STYLE & COULEURS
+styleGroup = "🎨 STYLE & COULEURS"
+showDashboard = input.bool(true, "Afficher Dashboard", group=styleGroup)
+showSetupLabels = input.bool(true, "Afficher Setup Labels", group=styleGroup)
+showCandleColors = input.bool(true, "Bougies Blanches/Noires", tooltip="Haute probabilité seulement", group=styleGroup)
+colorBull = input.color(#00ff00, "Couleur Bull", inline="col1", group=styleGroup)
+colorBear = input.color(#ff0000, "Couleur Bear", inline="col1", group=styleGroup)
+colorNeutral = input.color(#808080, "Couleur Neutre", inline="col2", group=styleGroup)
+colorGold = input.color(#FFD700, "Couleur Or", inline="col2", group=styleGroup)
+
+
+// 📈 FIBONACCI AUTO - PARAMÈTRES ÉTENDUS
+fiboPivotStrength = input.int(10, "Pivot Strength", minval=5, maxval=20, group=fiboGroup)
+fiboMinSwingATR = input.float(2.0, "Min Swing (x ATR)", minval=0.5, maxval=5.0, step=0.5, group=fiboGroup)
+fiboShowKeyZones = input.bool(true, "Afficher Zones Clés", group=fiboGroup)
+fiboRangePercent = input.float(10.0, "Range Affichage (%)", minval=5.0, maxval=50.0, step=5.0, group=fiboGroup)
+
+// 🧱 ORDER BLOCKS - PARAMÈTRES ÉTENDUS
+obShowM30 = input.bool(true, "M30", inline="obtf1", group=obGroup)
+obShowH1 = input.bool(true, "H1", inline="obtf1", group=obGroup)
+obShowH4 = input.bool(true, "H4", inline="obtf2", group=obGroup)
+obShowD1 = input.bool(true, "D1", inline="obtf2", group=obGroup)
+obMaxZones = input.int(50, "Max Zones", minval=10, maxval=100, group=obGroup)
+
+// 📐 SMC/MSS/BOS - PARAMÈTRES
+smcPivotLength = input.int(5, "Pivot Length", minval=3, maxval=20, group=smcGroup)
+smcShowMSS = input.bool(true, "Afficher MSS", inline="smc1", group=smcGroup)
+smcShowBOS = input.bool(true, "Afficher BOS", inline="smc1", group=smcGroup)
+smcShowCHoCH = input.bool(true, "Afficher CHoCH", inline="smc2", group=smcGroup)
+
+// 💎 FVG - PARAMÈTRES ICT
+fvgSessionFilter = input.bool(true, "Filtrage Session", group=fvgGroup)
+fvgAMSession = input.session("0930-1000", "AM Session", group=fvgGroup)
+fvgPMSession = input.session("1330-1400", "PM Session", group=fvgGroup)
+fvgShowiFVG = input.bool(true, "Afficher iFVG", group=fvgGroup)
+fvgRetestMode = input.string("Close", "Mode Retest", options=["Close", "Wick"], group=fvgGroup)
+
+// 📅 PDH/PDL - PARAMÈTRES ÉTENDUS
+pdhLineStyle = input.string("solid", "Style Ligne", options=["solid", "dashed", "dotted"], group=pdhGroup)
+pdhLineWidth = input.int(1, "Épaisseur", minval=1, maxval=3, group=pdhGroup)
+showDOpen = input.bool(true, "Daily Open", inline="opens1", group=pdhGroup)
+showWOpen = input.bool(true, "Weekly Open", inline="opens1", group=pdhGroup)
+showMOpen = input.bool(true, "Monthly Open", inline="opens2", group=pdhGroup)
+
+// 💠 RSI DIVERGENCE - PARAMÈTRES ÉTENDUS
+rsiShowRegular = input.bool(true, "Regular Div", inline="rsidiv1", group=rsiDivGroup)
+rsiShowHidden = input.bool(true, "Hidden Div", inline="rsidiv1", group=rsiDivGroup)
+rsiDivTF1 = input.timeframe("15", "TF1", group=rsiDivGroup)
+rsiDivTF2 = input.timeframe("30", "TF2", group=rsiDivGroup)
+rsiDivTF3 = input.timeframe("60", "TF3", group=rsiDivGroup)
+
+// 📈 TREND LINES - PARAMÈTRES
+trendLinePivotLength = input.int(10, "Pivot Length", minval=5, maxval=50, group=trendLineGroup)
+trendLineExtend = input.int(20, "Extension (bars)", minval=5, maxval=100, group=trendLineGroup)
+trendLineWidth = input.int(2, "Épaisseur", minval=1, maxval=5, group=trendLineGroup)
+
+// 🚩 FLAGS & BREAKOUTS - PARAMÈTRES
+flagMinImpulse = input.float(2.0, "Min Impulse (x ATR)", minval=1.0, maxval=5.0, step=0.5, group=flagGroup)
+flagConsolidationBars = input.int(10, "Consolidation Bars", minval=5, maxval=50, group=flagGroup)
+flagShowWedge = input.bool(true, "Afficher Wedge", inline="flag1", group=flagGroup)
+flagShowFlag = input.bool(true, "Afficher Flag", inline="flag1", group=flagGroup)
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📊 CALCULS / CALCULATIONS
+// ════════════════════════════════════════════════════════════════════════════════
+
+// EMAs
+ema9 = ta.ema(close, ema9Period)
+ema50 = ta.ema(close, ema50Period)
+ema100 = ta.ema(close, ema100Period)
+ema200 = ta.ema(close, ema200Period)
+
+// EMA Trend
+emaTrend = ema50 > ema100 and ema100 > ema200 ? "Bull" : ema50 < ema100 and ema100 < ema200 ? "Bear" : "Neutre"
+emaTrendColor = emaTrend == "Bull" ? colorBull : emaTrend == "Bear" ? colorBear : colorNeutral
+
+// EMA9 Momentum
+ema9Mom = close > ema9 ? "Bull" : close < ema9 ? "Bear" : "Neutre"
+ema9MomColor = ema9Mom == "Bull" ? colorBull : ema9Mom == "Bear" ? colorBear : colorNeutral
+
+// VWAP
+vwapValue = ta.vwap(hlc3)
+vwapTrend = close > vwapValue ? "Bull" : "Bear"
+vwapColor = vwapTrend == "Bull" ? colorBull : colorBear
+
+// Supertrend
+[supertrendValue, supertrendDir] = ta.supertrend(stMultiplier, stPeriod)
+stTrend = supertrendDir < 0 ? "Bull" : "Bear"
+stColor = stTrend == "Bull" ? colorBull : colorBear
+
+// ATR pour calculs
+atr = ta.atr(14)
+
+// Daily Open
+var float dailyOpen = na
+if ta.change(time("D"))
+    dailyOpen := open
+dailyTrend = close > dailyOpen ? "Bull" : "Bear"
+dailyColor = dailyTrend == "Bull" ? colorBull : colorBear
+
+// Squeeze Detection
+basis = ta.sma(close, squeezeBBLength)
+dev = ta.stdev(close, squeezeBBLength) * squeezeBBMult
+upperBB = basis + dev
+lowerBB = basis - dev
+ma = ta.sma(close, squeezeKCLength)
+rangeMA = ta.sma(ta.tr, squeezeKCLength)
+rangema = rangeMA * squeezeKCMult
+upperKC = ma + rangema
+lowerKC = ma - rangema
+sqzOn = lowerBB > lowerKC and upperBB < upperKC
+sqzOff = lowerBB < lowerKC and upperBB > upperKC
+noSqz = not sqzOn and not sqzOff
+
+// Volume Analysis
+buyVolume = volume * (close > open ? 1 : 0)
+sellVolume = volume * (close <= open ? 1 : 0)
+totalVolume = buyVolume + sellVolume
+buyPercent = totalVolume > 0 ? (buyVolume / totalVolume) * 100 : 50
+sellPercent = totalVolume > 0 ? (sellVolume / totalVolume) * 100 : 50
+
+// RSI
+rsi = ta.rsi(close, rsiLength)
+
+// Price vs EMA50
+priceVsEma50 = close > ema50 ? "Au-dessus" : "En-dessous"
+
+// ADR/ATR %
+smaHigh = ta.sma(high, adrLength)
+smaLow = ta.sma(low, adrLength)
+adr = smaHigh - smaLow
+adrPercent = close > 0 ? (adr / close) * 100 : 0
+atrPercent = close > 0 ? (atr / close) * 100 : 0
+
+// Engulfing Detection
+isBullishEngulfing = close > open and close[1] < open[1] and close > open[1] and open < close[1] and (close - open) / (high - low) > 0.6 and (close - open) > engulfingMinSize * (open[1] - close[1])
+isBearishEngulfing = close < open and close[1] > open[1] and close < open[1] and open > close[1] and (open - close) / (high - low) > 0.6 and (open - close) > engulfingMinSize * (close[1] - open[1])
+
+// Structure Detection (Simplified)
+pivotHigh = ta.pivothigh(high, structureLookback, structureLookback)
+pivotLow = ta.pivotlow(low, structureLookback, structureLookback)
+var float lastHH = na
+var float lastHL = na
+var float lastLH = na
+var float lastLL = na
+
+if not na(pivotHigh)
+    if na(lastHH) or pivotHigh > lastHH
+        lastHH := pivotHigh
+    else if pivotHigh < lastHH
+        lastLH := pivotHigh
+
+if not na(pivotLow)
+    if na(lastLL) or pivotLow < lastLL
+        lastLL := pivotLow
+    else if pivotLow > lastLL
+        lastHL := pivotLow
+
+// FVG Detection (Simplified)
+bullishFVG = low > high[2]
+bearishFVG = high < low[2]
+fvgSize = bullishFVG ? ((low - high[2]) / close) * 100 : bearishFVG ? ((low[2] - high) / close) * 100 : 0
+validBullishFVG = bullishFVG and fvgSize >= fvgMinSize
+validBearishFVG = bearishFVG and fvgSize >= fvgMinSize
+
+// Equal Highs/Lows (Liquidity)
+eqhThreshold = close * (liqThreshold / 100)
+eqlThreshold = close * (liqThreshold / 100)
+isEQH = math.abs(high - high[1]) <= eqhThreshold and high >= high[1]
+isEQL = math.abs(low - low[1]) <= eqlThreshold and low <= low[1]
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🧠 CONFLUENCE ENGINE
+// ════════════════════════════════════════════════════════════════════════════════
+
+confluenceScore = 0
+maxConfluence = 0
+
+// EMA Trend
+if emaImpact
+    maxConfluence += 2
+    if emaTrend == "Bull"
+        confluenceScore += 2
+    else if emaTrend == "Bear"
+        confluenceScore -= 2
+
+// EMA9 Momentum
+if ema9Impact
+    maxConfluence += 1
+    if ema9Mom == "Bull"
+        confluenceScore += 1
+    else if ema9Mom == "Bear"
+        confluenceScore -= 1
+
+// VWAP
+if vwapImpact
+    maxConfluence += 1
+    if vwapTrend == "Bull"
+        confluenceScore += 1
+    else
+        confluenceScore -= 1
+
+// Supertrend
+if stImpact
+    maxConfluence += 2
+    if stTrend == "Bull"
+        confluenceScore += 2
+    else
+        confluenceScore -= 2
+
+// RSI
+if rsiDivImpact
+    maxConfluence += 1
+    if rsi < 30
+        confluenceScore += 1
+    else if rsi > 70
+        confluenceScore -= 1
+
+// Volume
+if volImpact
+    maxConfluence += 1
+    if buyPercent > 60
+        confluenceScore += 1
+    else if sellPercent > 60
+        confluenceScore -= 1
+
+// Calculate confluence state
+confluenceNormalized = maxConfluence > 0 ? (confluenceScore / maxConfluence) * 100 : 0
+confluenceState = confluenceNormalized > 60 ? "BULL FORT" : confluenceNormalized > 20 ? "Bull" : confluenceNormalized < -60 ? "BEAR FORT" : confluenceNormalized < -20 ? "Bear" : "Neutre"
+confluenceColor = confluenceNormalized > 60 ? color.new(colorBull, 0) : confluenceNormalized > 20 ? color.new(colorBull, 50) : confluenceNormalized < -60 ? color.new(colorBear, 0) : confluenceNormalized < -20 ? color.new(colorBear, 50) : colorNeutral
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 💰 GESTION DU RISQUE / RISK MANAGEMENT
+// ════════════════════════════════════════════════════════════════════════════════
+
+riskAmount = capitalInput * (riskPercentInput / 100)
+
+// Calcul SL/TP basé sur ATR et mode
+atrMultiplierSL = strategyType == "Scalping" ? 1.0 : strategyType == "Intraday" ? 1.5 : 2.0
+atrMultiplierTP1 = strategyType == "Scalping" ? 1.5 : strategyType == "Intraday" ? 2.5 : 3.0
+atrMultiplierTP2 = strategyType == "Scalping" ? 2.5 : strategyType == "Intraday" ? 4.0 : 5.0
+atrMultiplierTP3 = strategyType == "Scalping" ? 4.0 : strategyType == "Intraday" ? 6.0 : 8.0
+
+// Mode agressif augmente les multiplicateurs
+if tradingMode == "Agressif"
+    atrMultiplierSL *= 0.8
+    atrMultiplierTP1 *= 1.2
+    atrMultiplierTP2 *= 1.2
+    atrMultiplierTP3 *= 1.2
+
+// Setup Long
+longEntryPrice = close
+longSL = longEntryPrice - (atr * atrMultiplierSL)
+longTP1 = longEntryPrice + (atr * atrMultiplierTP1)
+longTP2 = longEntryPrice + (atr * atrMultiplierTP2)
+longTP3 = longEntryPrice + (atr * atrMultiplierTP3)
+longRiskPoints = longEntryPrice - longSL
+longRewardPoints = longTP1 - longEntryPrice
+longRR = longRiskPoints > 0 ? longRewardPoints / longRiskPoints : 0
+longLotSize = longRiskPoints > 0 ? riskAmount / longRiskPoints : 0
+
+// Setup Short
+shortEntryPrice = close
+shortSL = shortEntryPrice + (atr * atrMultiplierSL)
+shortTP1 = shortEntryPrice - (atr * atrMultiplierTP1)
+shortTP2 = shortEntryPrice - (atr * atrMultiplierTP2)
+shortTP3 = shortEntryPrice - (atr * atrMultiplierTP3)
+shortRiskPoints = shortSL - shortEntryPrice
+shortRewardPoints = shortEntryPrice - shortTP1
+shortRR = shortRiskPoints > 0 ? shortRewardPoints / shortRiskPoints : 0
+shortLotSize = shortRiskPoints > 0 ? riskAmount / shortRiskPoints : 0
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📊 MTF BIAS
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Timeframes pour MTF analysis
+tf1 = "1"
+tf5 = "5"
+tf15 = "15"
+tf30 = "30"
+tf60 = "60"
+tf240 = "240"
+tfD = "D"
+
+// Request MTF data
+[mtf1Close, mtf1Ema50] = request.security(syminfo.tickerid, tf1, [close, ta.ema(close, 50)], lookahead=barmerge.lookahead_off)
+[mtf5Close, mtf5Ema50] = request.security(syminfo.tickerid, tf5, [close, ta.ema(close, 50)], lookahead=barmerge.lookahead_off)
+[mtf15Close, mtf15Ema50] = request.security(syminfo.tickerid, tf15, [close, ta.ema(close, 50)], lookahead=barmerge.lookahead_off)
+[mtf30Close, mtf30Ema50] = request.security(syminfo.tickerid, tf30, [close, ta.ema(close, 50)], lookahead=barmerge.lookahead_off)
+[mtf60Close, mtf60Ema50] = request.security(syminfo.tickerid, tf60, [close, ta.ema(close, 50)], lookahead=barmerge.lookahead_off)
+[mtf240Close, mtf240Ema50] = request.security(syminfo.tickerid, tf240, [close, ta.ema(close, 50)], lookahead=barmerge.lookahead_off)
+[mtfDClose, mtfDEma50] = request.security(syminfo.tickerid, tfD, [close, ta.ema(close, 50)], lookahead=barmerge.lookahead_off)
+
+// MTF Bias
+mtf1Bias = mtf1Close > mtf1Ema50 ? 1 : -1
+mtf5Bias = mtf5Close > mtf5Ema50 ? 1 : -1
+mtf15Bias = mtf15Close > mtf15Ema50 ? 1 : -1
+mtf30Bias = mtf30Close > mtf30Ema50 ? 1 : -1
+mtf60Bias = mtf60Close > mtf60Ema50 ? 1 : -1
+mtf240Bias = mtf240Close > mtf240Ema50 ? 1 : -1
+mtfDBias = mtfDClose > mtfDEma50 ? 1 : -1
+
+// General Bias
+genBias = (mtf1Bias + mtf5Bias + mtf15Bias + mtf30Bias + mtf60Bias + mtf240Bias + mtfDBias) / 7
+genBiasText = genBias > 0.5 ? "BULL FORT" : genBias > 0.2 ? "Bull" : genBias < -0.5 ? "BEAR FORT" : genBias < -0.2 ? "Bear" : "Neutre"
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎨 AFFICHAGE / DISPLAY
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Plot EMAs
+plot(emaShow ? ema50 : na, "EMA 50", color=color.new(#2196F3, 0), linewidth=2)
+plot(emaShow ? ema100 : na, "EMA 100", color=color.new(#FF9800, 0), linewidth=2)
+plot(emaShow ? ema200 : na, "EMA 200", color=color.new(#9C27B0, 0), linewidth=2)
+
+// Plot EMA9
+plot(ema9Show ? ema9 : na, "EMA 9", color=ema9MomColor, linewidth=3)
+
+// Plot VWAP
+plot(vwapShow ? vwapValue : na, "VWAP", color=vwapColor, linewidth=2)
+
+// Plot Supertrend
+plot(stShow ? supertrendValue : na, "Supertrend", color=stColor, linewidth=2, style=plot.style_line)
+
+// Plot Daily Open
+plot(dailyShow and not na(dailyOpen) ? dailyOpen : na, "Daily Open", color=dailyColor, linewidth=2, style=plot.style_circles)
+
+// Engulfing Shapes
+plotshape(engulfingShow and isBullishEngulfing, "Bullish Engulfing", shape.triangleup, location.belowbar, color=colorBull, size=size.small)
+plotshape(engulfingShow and isBearishEngulfing, "Bearish Engulfing", shape.triangledown, location.abovebar, color=colorBear, size=size.small)
+
+// FVG Boxes
+if fvgShow and validBullishFVG
+    box.new(bar_index[2], high[2], bar_index, low, border_color=color.new(colorBull, 70), bgcolor=color.new(colorBull, 90))
+
+if fvgShow and validBearishFVG
+    box.new(bar_index[2], low[2], bar_index, high, border_color=color.new(colorBear, 70), bgcolor=color.new(colorBear, 90))
+
+// Structure Labels
+if structureShow and not na(pivotHigh)
+    label.new(bar_index[structureLookback], pivotHigh, "HH", style=label.style_label_down, color=colorBear, textcolor=color.white, size=size.tiny)
+
+if structureShow and not na(pivotLow)
+    label.new(bar_index[structureLookback], pivotLow, "LL", style=label.style_label_up, color=colorBull, textcolor=color.white, size=size.tiny)
+
+// Liquidity Markers
+plotshape(liqShow and isEQH, "EQH", shape.diamond, location.abovebar, color=color.new(color.purple, 0), size=size.tiny)
+plotshape(liqShow and isEQL, "EQL", shape.diamond, location.belowbar, color=color.new(color.purple, 0), size=size.tiny)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎯 SETUP DETECTION & SIGNAUX
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Conditions pour setup Long
+longCondition = confluenceNormalized > 40 and stTrend == "Bull" and close > ema9 and close > vwapValue
+// Conditions pour setup Short
+shortCondition = confluenceNormalized < -40 and stTrend == "Bear" and close < ema9 and close < vwapValue
+
+// Candlestick coloring (haute probabilité seulement)
+strongBullCondition = confluenceNormalized > 70 and longCondition and isBullishEngulfing
+strongBearCondition = confluenceNormalized < -70 and shortCondition and isBearishEngulfing
+
+candleColor = showCandleColors and strongBullCondition ? color.white : showCandleColors and strongBearCondition ? color.black : na
+barcolor(candleColor)
+
+// Setup Labels sur le graphique
+if showSetupLabels and longCondition and ta.change(longCondition)
+    labelText = "🚀 LONG\n" + 
+                 "Entry: " + str.tostring(longEntryPrice, format.mintick) + "\n" +
+                 "SL: " + str.tostring(longSL, format.mintick) + "\n" +
+                 "TP1: " + str.tostring(longTP1, format.mintick) + "\n" +
+                 "RR: " + str.tostring(longRR, "#.##") + "\n" +
+                 "Lot: " + str.tostring(longLotSize, "#.##")
+    label.new(bar_index, low, labelText, style=label.style_label_up, color=color.new(colorBull, 20), textcolor=color.white, size=size.normal)
+
+if showSetupLabels and shortCondition and ta.change(shortCondition)
+    labelText = "🔻 SHORT\n" + 
+                 "Entry: " + str.tostring(shortEntryPrice, format.mintick) + "\n" +
+                 "SL: " + str.tostring(shortSL, format.mintick) + "\n" +
+                 "TP1: " + str.tostring(shortTP1, format.mintick) + "\n" +
+                 "RR: " + str.tostring(shortRR, "#.##") + "\n" +
+                 "Lot: " + str.tostring(shortLotSize, "#.##")
+    label.new(bar_index, high, labelText, style=label.style_label_down, color=color.new(colorBear, 20), textcolor=color.white, size=size.normal)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📊 DASHBOARD
+// ════════════════════════════════════════════════════════════════════════════════
+
+if showDashboard and barstate.islast
+    var table dashboard = table.new(position.bottom_left, 2, 16, border_width=2, border_color=colorGold, frame_color=colorGold, frame_width=2)
+    
+    // Row 1: Titre et Prix
+    table.cell(dashboard, 0, 0, "🏆 AI GOLD MASTER", text_color=colorGold, bgcolor=color.black, text_size=size.large)
+    table.cell(dashboard, 1, 0, str.tostring(close, format.mintick), text_color=color.white, bgcolor=color.black, text_size=size.large)
+    
+    // Row 2: Mode
+    modeText = tradingMode + " | " + strategyType
+    table.cell(dashboard, 0, 1, "Mode", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 1, modeText, text_color=color.white, bgcolor=color.black)
+    
+    // Row 3: Tendance
+    table.cell(dashboard, 0, 2, "Tendance", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 2, emaTrend, text_color=emaTrendColor, bgcolor=color.black)
+    
+    // Row 4: Confluence
+    confluenceDisplayScore = str.tostring(math.round(confluenceNormalized), "#")
+    table.cell(dashboard, 0, 3, "Confluence", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 3, confluenceState + " (" + confluenceDisplayScore + "%)", text_color=confluenceColor, bgcolor=color.black)
+    
+    // Row 5: Volume
+    volumeText = "Buy: " + str.tostring(math.round(buyPercent), "#") + "% | Sell: " + str.tostring(math.round(sellPercent), "#") + "%"
+    table.cell(dashboard, 0, 4, "Volume", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 4, volumeText, text_color=buyPercent > 50 ? colorBull : colorBear, bgcolor=color.black)
+    
+    // Row 6: EMA Trend
+    table.cell(dashboard, 0, 5, "EMA Trend", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 5, emaTrend, text_color=emaTrendColor, bgcolor=color.black)
+    
+    // Row 7: EMA9 Momentum
+    table.cell(dashboard, 0, 6, "EMA9 MoM", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 6, ema9Mom, text_color=ema9MomColor, bgcolor=color.black)
+    
+    // Row 8: VWAP
+    table.cell(dashboard, 0, 7, "VWAP", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 7, vwapTrend, text_color=vwapColor, bgcolor=color.black)
+    
+    // Row 9: Supertrend
+    table.cell(dashboard, 0, 8, "Supertrend", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 8, stTrend, text_color=stColor, bgcolor=color.black)
+    
+    // Row 10: Daily Open
+    table.cell(dashboard, 0, 9, "Daily Open", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 9, dailyTrend, text_color=dailyColor, bgcolor=color.black)
+    
+    // Row 11: Prix vs EMA50
+    table.cell(dashboard, 0, 10, "Prix vs EMA50", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 10, priceVsEma50, text_color=close > ema50 ? colorBull : colorBear, bgcolor=color.black)
+    
+    // Row 12: SL & TP
+    currentSetup = confluenceScore > 0 ? "Long" : "Short"
+    currentSL = confluenceScore > 0 ? longSL : shortSL
+    currentTP = confluenceScore > 0 ? longTP1 : shortTP1
+    slTpText = "SL: " + str.tostring(currentSL, format.mintick) + " | TP: " + str.tostring(currentTP, format.mintick)
+    table.cell(dashboard, 0, 11, "SL & TP", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 11, slTpText, text_color=color.white, bgcolor=color.black)
+    
+    // Row 13: RR & LOT
+    currentRR = confluenceScore > 0 ? longRR : shortRR
+    currentLot = confluenceScore > 0 ? longLotSize : shortLotSize
+    rrLotText = "RR: " + str.tostring(currentRR, "#.##") + " | Lot: " + str.tostring(currentLot, "#.##")
+    table.cell(dashboard, 0, 12, "RR & LOT", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 12, rrLotText, text_color=color.white, bgcolor=color.black)
+    
+    // Row 14: SYM/TF
+    symTfText = syminfo.ticker + " / " + timeframe.period
+    table.cell(dashboard, 0, 13, "SYM/TF", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 13, symTfText, text_color=color.white, bgcolor=color.black)
+    
+    // Row 15: Squeeze
+    squeezeText = sqzOn ? "SQUEEZE 🟡" : "NO SQUEEZE"
+    squeezeColor = sqzOn ? color.yellow : color.gray
+    table.cell(dashboard, 0, 14, "Squeeze", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 14, squeezeText, text_color=squeezeColor, bgcolor=color.black)
+    
+    // Row 16: MTF Bias General
+    table.cell(dashboard, 0, 15, "GEN Bias", text_color=colorGold, bgcolor=color.black)
+    table.cell(dashboard, 1, 15, genBiasText, text_color=genBias > 0 ? colorBull : genBias < 0 ? colorBear : colorNeutral, bgcolor=color.black)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📊 MTF BIAS DASHBOARD (Right Side)
+// ════════════════════════════════════════════════════════════════════════════════
+
+if showDashboard and barstate.islast
+    var table mtfDashboard = table.new(position.bottom_right, 2, 8, border_width=2, border_color=colorGold, frame_color=colorGold, frame_width=2)
+    
+    // Header
+    table.cell(mtfDashboard, 0, 0, "TF", text_color=colorGold, bgcolor=color.black, text_size=size.normal)
+    table.cell(mtfDashboard, 1, 0, "BIAS", text_color=colorGold, bgcolor=color.black, text_size=size.normal)
+    
+    // 1m
+    table.cell(mtfDashboard, 0, 1, "1m", text_color=color.white, bgcolor=color.black)
+    table.cell(mtfDashboard, 1, 1, mtf1Bias > 0 ? "🟢" : "🔴", text_color=color.white, bgcolor=color.black)
+    
+    // 5m
+    table.cell(mtfDashboard, 0, 2, "5m", text_color=color.white, bgcolor=color.black)
+    table.cell(mtfDashboard, 1, 2, mtf5Bias > 0 ? "🟢" : "🔴", text_color=color.white, bgcolor=color.black)
+    
+    // 15m
+    table.cell(mtfDashboard, 0, 3, "15m", text_color=color.white, bgcolor=color.black)
+    table.cell(mtfDashboard, 1, 3, mtf15Bias > 0 ? "🟢" : "🔴", text_color=color.white, bgcolor=color.black)
+    
+    // 30m
+    table.cell(mtfDashboard, 0, 4, "30m", text_color=color.white, bgcolor=color.black)
+    table.cell(mtfDashboard, 1, 4, mtf30Bias > 0 ? "🟢" : "🔴", text_color=color.white, bgcolor=color.black)
+    
+    // 1H
+    table.cell(mtfDashboard, 0, 5, "1H", text_color=color.white, bgcolor=color.black)
+    table.cell(mtfDashboard, 1, 5, mtf60Bias > 0 ? "🟢" : "🔴", text_color=color.white, bgcolor=color.black)
+    
+    // 4H
+    table.cell(mtfDashboard, 0, 6, "4H", text_color=color.white, bgcolor=color.black)
+    table.cell(mtfDashboard, 1, 6, mtf240Bias > 0 ? "🟢" : "🔴", text_color=color.white, bgcolor=color.black)
+    
+    // Daily
+    table.cell(mtfDashboard, 0, 7, "D", text_color=color.white, bgcolor=color.black)
+    table.cell(mtfDashboard, 1, 7, mtfDBias > 0 ? "🟢" : "🔴", text_color=color.white, bgcolor=color.black)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎯 ALERTES / ALERTS
+// ════════════════════════════════════════════════════════════════════════════════
+
+alertcondition(longCondition, title="Long Setup", message="🚀 Setup LONG détecté - Confluence: {{plot_0}}%")
+alertcondition(shortCondition, title="Short Setup", message="🔻 Setup SHORT détecté - Confluence: {{plot_0}}%")
+alertcondition(sqzOn, title="Squeeze Activé", message="🟡 SQUEEZE détecté - Compression en cours")
+alertcondition(isBullishEngulfing, title="Bullish Engulfing", message="📈 Bougie englobante haussière détectée")
+alertcondition(isBearishEngulfing, title="Bearish Engulfing", message="📉 Bougie englobante baissière détectée")
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎉 FIN DU CODE / END OF CODE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📈 FIBONACCI AUTO - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Arrays pour stocker les zones Fibonacci
+var array<float> fiboStarts = array.new_float(0)
+var array<float> fiboEnds = array.new_float(0)
+var array<bool> fiboIsValid = array.new_bool(0)
+var array<bool> fiboIsBullish = array.new_bool(0)
+var array<int> fiboStartBars = array.new_int(0)
+
+// Détection des pivots pour impulsions
+pivotHigh = ta.pivothigh(high, fiboPivotStrength, fiboPivotStrength)
+pivotLow = ta.pivotlow(low, fiboPivotStrength, fiboPivotStrength)
+
+// Variables pour tracker derniers swings
+var float lastSwingHigh = na
+var float lastSwingLow = na
+var int lastSwingHighBar = na
+var int lastSwingLowBar = na
+
+// Minimum swing size
+minimumSwingSize = atr * fiboMinSwingATR
+
+// Détecter nouveau swing high
+if not na(pivotHigh)
+    lastSwingHigh := pivotHigh
+    lastSwingHighBar := bar_index - fiboPivotStrength
+    
+    // Si on a un swing low précédent, créer zone Fibo HAUSSIÈRE
+    if not na(lastSwingLow)
+        swingSize = lastSwingHigh - lastSwingLow
+        if swingSize >= minimumSwingSize
+            // Ajouter nouvelle zone
+            array.push(fiboStarts, lastSwingLow)
+            array.push(fiboEnds, lastSwingHigh)
+            array.push(fiboIsValid, true)
+            array.push(fiboIsBullish, true)
+            array.push(fiboStartBars, lastSwingLowBar)
+
+// Détecter nouveau swing low
+if not na(pivotLow)
+    lastSwingLow := pivotLow
+    lastSwingLowBar := bar_index - fiboPivotStrength
+    
+    // Si on a un swing high précédent, créer zone Fibo BAISSIÈRE
+    if not na(lastSwingHigh)
+        swingSize = lastSwingHigh - lastSwingLow
+        if swingSize >= minimumSwingSize
+            // Ajouter nouvelle zone
+            array.push(fiboStarts, lastSwingHigh)
+            array.push(fiboEnds, lastSwingLow)
+            array.push(fiboIsValid, true)
+            array.push(fiboIsBullish, false)
+            array.push(fiboStartBars, lastSwingHighBar)
+
+// Limiter à 50 zones maximum
+while array.size(fiboStarts) > 50
+    array.shift(fiboStarts)
+    array.shift(fiboEnds)
+    array.shift(fiboIsValid)
+    array.shift(fiboIsBullish)
+    array.shift(fiboStartBars)
+
+// Vérifier invalidation des zones
+for i = 0 to array.size(fiboStarts) - 1
+    if array.get(fiboIsValid, i)
+        startPrice = array.get(fiboStarts, i)
+        endPrice = array.get(fiboEnds, i)
+        isBull = array.get(fiboIsBullish, i)
+        
+        // Zone haussière: invalidée si prix clôture sous le swing low
+        if isBull and close < endPrice
+            array.set(fiboIsValid, i, false)
+        
+        // Zone baissière: invalidée si prix clôture au-dessus swing high
+        if not isBull and close > startPrice
+            array.set(fiboIsValid, i, false)
+
+// Variable pour tracker si sur zone Fibo (pour triangles jaunes)
+var bool onFiboKeyZone = false
+onFiboKeyZone := false
+
+// Affichage des zones Fibonacci
+rangeThreshold = close * (fiboRangePercent / 100)
+
+if fiboShow
+    for i = 0 to array.size(fiboStarts) - 1
+        if array.get(fiboIsValid, i)
+            startPrice = array.get(fiboStarts, i)
+            endPrice = array.get(fiboEnds, i)
+            isBull = array.get(fiboIsBullish, i)
+            startBar = array.get(fiboStartBars, i)
+            
+            // Vérifier si dans le range raisonnable
+            avgPrice = (startPrice + endPrice) / 2
+            if math.abs(close - avgPrice) <= rangeThreshold
+                
+                // Calculer les niveaux Fibonacci
+                range = startPrice - endPrice
+                level_0 = startPrice
+                level_236 = isBull ? endPrice + range * 0.236 : startPrice - range * 0.236
+                level_382 = isBull ? endPrice + range * 0.382 : startPrice - range * 0.382
+                level_50 = isBull ? endPrice + range * 0.500 : startPrice - range * 0.500
+                level_618 = isBull ? endPrice + range * 0.618 : startPrice - range * 0.618
+                level_786 = isBull ? endPrice + range * 0.786 : startPrice - range * 0.786
+                level_886 = isBull ? endPrice + range * 0.886 : startPrice - range * 0.886
+                level_100 = endPrice
+                
+                // Dessiner les niveaux clés uniquement
+                if fiboShowKeyZones
+                    // Ligne 50%
+                    line.new(startBar, level_50, bar_index + 10, level_50, 
+                             color=color.new(color.yellow, 70), width=1, style=line.style_dashed, extend=extend.right)
+                    
+                    // Ligne 61.8%
+                    line.new(startBar, level_618, bar_index + 10, level_618, 
+                             color=color.new(color.orange, 70), width=1, style=line.style_dashed, extend=extend.right)
+                    
+                    // Ligne 78.6%
+                    line.new(startBar, level_786, bar_index + 10, level_786, 
+                             color=color.new(color.red, 70), width=1, style=line.style_dashed, extend=extend.right)
+                    
+                    // Zone 50%-61.8% (Golden Pocket)
+                    box.new(startBar, level_50, bar_index + 10, level_618,
+                            border_color=color.new(color.yellow, 80),
+                            bgcolor=color.new(color.yellow, 95))
+                    
+                    // Zone 78.6%-88.6%
+                    box.new(startBar, level_786, bar_index + 10, level_886,
+                            border_color=color.new(color.red, 80),
+                            bgcolor=color.new(color.red, 95))
+                
+                // Vérifier si close est sur une zone clé (pour triangles jaunes)
+                tolerance = close * 0.003
+                if (math.abs(close - level_50) <= tolerance or
+                    math.abs(close - level_618) <= tolerance or
+                    math.abs(close - level_786) <= tolerance or
+                    math.abs(close - level_886) <= tolerance)
+                    onFiboKeyZone := true
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🧱 ORDER BLOCKS HTF - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Request engulfing patterns from HTF
+[m30BullEng, m30BearEng, m30Open1] = request.security(syminfo.tickerid, "30", [
+    close > open and close[1] < open[1] and close > open[1] and open < close[1],
+    close < open and close[1] > open[1] and close < open[1] and open > close[1],
+    open[1]
+], lookahead=barmerge.lookahead_off)
+
+[h1BullEng, h1BearEng, h1Open1] = request.security(syminfo.tickerid, "60", [
+    close > open and close[1] < open[1] and close > open[1] and open < close[1],
+    close < open and close[1] > open[1] and close < open[1] and open > close[1],
+    open[1]
+], lookahead=barmerge.lookahead_off)
+
+[h4BullEng, h4BearEng, h4Open1] = request.security(syminfo.tickerid, "240", [
+    close > open and close[1] < open[1] and close > open[1] and open < close[1],
+    close < open and close[1] > open[1] and close < open[1] and open > close[1],
+    open[1]
+], lookahead=barmerge.lookahead_off)
+
+[d1BullEng, d1BearEng, d1Open1] = request.security(syminfo.tickerid, "D", [
+    close > open and close[1] < open[1] and close > open[1] and open < close[1],
+    close < open and close[1] > open[1] and close < open[1] and open > close[1],
+    open[1]
+], lookahead=barmerge.lookahead_off)
+
+// Arrays pour Order Blocks
+var array<float> obPrices = array.new_float(0)
+var array<string> obTimeframes = array.new_string(0)
+var array<bool> obIsBullish = array.new_bool(0)
+var array<int> obBars = array.new_int(0)
+var array<bool> obIsValid = array.new_bool(0)
+
+// Détecter nouveau Order Block M30
+if obShowM30 and (m30BullEng or m30BearEng)
+    array.push(obPrices, m30Open1)
+    array.push(obTimeframes, "M30")
+    array.push(obIsBullish, m30BullEng)
+    array.push(obBars, bar_index)
+    array.push(obIsValid, true)
+
+// Détecter nouveau Order Block H1
+if obShowH1 and (h1BullEng or h1BearEng)
+    array.push(obPrices, h1Open1)
+    array.push(obTimeframes, "H1")
+    array.push(obIsBullish, h1BullEng)
+    array.push(obBars, bar_index)
+    array.push(obIsValid, true)
+
+// Détecter nouveau Order Block H4
+if obShowH4 and (h4BullEng or h4BearEng)
+    array.push(obPrices, h4Open1)
+    array.push(obTimeframes, "H4")
+    array.push(obIsBullish, h4BullEng)
+    array.push(obBars, bar_index)
+    array.push(obIsValid, true)
+
+// Détecter nouveau Order Block D1
+if obShowD1 and (d1BullEng or d1BearEng)
+    array.push(obPrices, d1Open1)
+    array.push(obTimeframes, "D1")
+    array.push(obIsBullish, d1BullEng)
+    array.push(obBars, bar_index)
+    array.push(obIsValid, true)
+
+// Limiter à obMaxZones
+while array.size(obPrices) > obMaxZones
+    array.shift(obPrices)
+    array.shift(obTimeframes)
+    array.shift(obIsBullish)
+    array.shift(obBars)
+    array.shift(obIsValid)
+
+// Vérifier invalidation OB (prix traverse et confirme)
+for i = 0 to array.size(obPrices) - 1
+    if array.get(obIsValid, i)
+        obPrice = array.get(obPrices, i)
+        obBull = array.get(obIsBullish, i)
+        
+        // OB bullish invalidé si prix clôture en-dessous
+        if obBull and close < obPrice
+            array.set(obIsValid, i, false)
+        
+        // OB bearish invalidé si prix clôture au-dessus
+        if not obBull and close > obPrice
+            array.set(obIsValid, i, false)
+
+// Variable pour tracker si sur OB (pour triangles orange)
+var bool onOrderBlock = false
+onOrderBlock := false
+
+// Afficher Order Blocks
+if obShow
+    for i = 0 to array.size(obPrices) - 1
+        if array.get(obIsValid, i)
+            obPrice = array.get(obPrices, i)
+            obTF = array.get(obTimeframes, i)
+            obBull = array.get(obIsBullish, i)
+            obBar = array.get(obBars, i)
+            
+            // Vérifier range raisonnable
+            if math.abs(close - obPrice) <= close * 0.10
+                // Ligne OB
+                obColor = obBull ? colorBull : colorBear
+                line.new(obBar, obPrice, bar_index + 20, obPrice,
+                         color=color.new(obColor, 50), width=2, style=line.style_solid, extend=extend.right)
+                
+                // Label avec TF
+                label.new(bar_index, obPrice, obTF, 
+                          style=obBull ? label.style_label_up : label.style_label_down,
+                          color=color.new(obColor, 30), textcolor=color.white, size=size.tiny)
+                
+                // Vérifier si close est sur cet OB (pour triangles orange)
+                tolerance = close * 0.005
+                if math.abs(close - obPrice) <= tolerance
+                    onOrderBlock := true
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📅 PDH/PDL/IB + WEEKLY OHLC - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Request previous day/week data
+[pdh, pdl, pwd, pwd] = request.security(syminfo.tickerid, "D", [high[1], low[1], open, close[1]], lookahead=barmerge.lookahead_on)
+[pwh, pwl, pwo] = request.security(syminfo.tickerid, "W", [high[1], low[1], open], lookahead=barmerge.lookahead_on)
+[pmo] = request.security(syminfo.tickerid, "M", [open], lookahead=barmerge.lookahead_on)
+
+// Affichage PDH/PDL/Weekly
+if pdhShow
+    lineStyle = pdhLineStyle == "solid" ? line.style_solid : pdhLineStyle == "dashed" ? line.style_dashed : line.style_dotted
+    
+    // Previous Day High
+    if showPDH and not na(pdh)
+        line.new(bar_index[10], pdh, bar_index + 20, pdh,
+                 color=color.new(colorBear, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pdh, "PDH", style=label.style_label_left, 
+                  color=color.new(colorBear, 70), textcolor=color.white, size=size.tiny)
+    
+    // Previous Day Low
+    if showPDL and not na(pdl)
+        line.new(bar_index[10], pdl, bar_index + 20, pdl,
+                 color=color.new(colorBull, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pdl, "PDL", style=label.style_label_left,
+                  color=color.new(colorBull, 70), textcolor=color.white, size=size.tiny)
+    
+    // Previous Week High
+    if showPWH and not na(pwh)
+        line.new(bar_index[10], pwh, bar_index + 20, pwh,
+                 color=color.new(color.purple, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pwh, "PWH", style=label.style_label_left,
+                  color=color.new(color.purple, 70), textcolor=color.white, size=size.tiny)
+    
+    // Previous Week Low
+    if showPWL and not na(pwl)
+        line.new(bar_index[10], pwl, bar_index + 20, pwl,
+                 color=color.new(color.purple, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pwl, "PWL", style=label.style_label_left,
+                  color=color.new(color.purple, 70), textcolor=color.white, size=size.tiny)
+    
+    // Daily Open
+    if showDOpen and not na(pwd)
+        line.new(bar_index[10], pwd, bar_index + 20, pwd,
+                 color=color.new(color.blue, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pwd, "D", style=label.style_label_left,
+                  color=color.new(color.blue, 70), textcolor=color.white, size=size.tiny)
+    
+    // Weekly Open
+    if showWOpen and not na(pwo)
+        line.new(bar_index[10], pwo, bar_index + 20, pwo,
+                 color=color.new(color.navy, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pwo, "W", style=label.style_label_left,
+                  color=color.new(color.navy, 70), textcolor=color.white, size=size.tiny)
+    
+    // Monthly Open
+    if showMOpen and not na(pmo)
+        line.new(bar_index[10], pmo, bar_index + 20, pmo,
+                 color=color.new(color.maroon, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pmo, "M", style=label.style_label_left,
+                  color=color.new(color.maroon, 70), textcolor=color.white, size=size.tiny)
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 💠 RSI DIVERGENCE MTF - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Fonction pour détecter divergences
+detectDivergence(src, osc, lookback, isRegular) =>
+    // Trouver pivots prix et RSI
+    pricePivotHigh = ta.pivothigh(src, 5, 5)
+    pricePivotLow = ta.pivotlow(src, 5, 5)
+    oscPivotHigh = ta.pivothigh(osc, 5, 5)
+    oscPivotLow = ta.pivotlow(osc, 5, 5)
+    
+    bullDiv = false
+    bearDiv = false
+    
+    // Recherche dans historique
+    if not na(pricePivotLow) and not na(oscPivotLow)
+        // Trouver pivot précédent
+        for i = 1 to lookback
+            if not na(pricePivotLow[i]) and not na(oscPivotLow[i])
+                if isRegular
+                    // Regular Bullish: Prix fait lower low, RSI fait higher low
+                    if pricePivotLow < pricePivotLow[i] and oscPivotLow > oscPivotLow[i]
+                        bullDiv := true
+                        break
+                else
+                    // Hidden Bullish: Prix fait higher low, RSI fait lower low
+                    if pricePivotLow > pricePivotLow[i] and oscPivotLow < oscPivotLow[i]
+                        bullDiv := true
+                        break
+    
+    if not na(pricePivotHigh) and not na(oscPivotHigh)
+        for i = 1 to lookback
+            if not na(pricePivotHigh[i]) and not na(oscPivotHigh[i])
+                if isRegular
+                    // Regular Bearish: Prix fait higher high, RSI fait lower high
+                    if pricePivotHigh > pricePivotHigh[i] and oscPivotHigh < oscPivotHigh[i]
+                        bearDiv := true
+                        break
+                else
+                    // Hidden Bearish: Prix fait lower high, RSI fait higher high
+                    if pricePivotHigh < pricePivotHigh[i] and oscPivotHigh > oscPivotHigh[i]
+                        bearDiv := true
+                        break
+    
+    [bullDiv, bearDiv]
+
+// RSI actuel TF
+rsiCurrent = ta.rsi(close, rsiLength)
+
+// Divergences Regular
+[regBullDiv, regBearDiv] = detectDivergence(close, rsiCurrent, rsiDivLookback, true)
+
+// Divergences Hidden
+[hidBullDiv, hidBearDiv] = detectDivergence(close, rsiCurrent, rsiDivLookback, false)
+
+// MTF RSI et divergences
+[rsi15, rsi15Close] = request.security(syminfo.tickerid, rsiDivTF1, [ta.rsi(close, rsiLength), close], lookahead=barmerge.lookahead_off)
+[rsi30, rsi30Close] = request.security(syminfo.tickerid, rsiDivTF2, [ta.rsi(close, rsiLength), close], lookahead=barmerge.lookahead_off)
+[rsi60, rsi60Close] = request.security(syminfo.tickerid, rsiDivTF3, [ta.rsi(close, rsiLength), close], lookahead=barmerge.lookahead_off)
+
+[regBull15, regBear15] = detectDivergence(rsi15Close, rsi15, rsiDivLookback, true)
+[regBull30, regBear30] = detectDivergence(rsi30Close, rsi30, rsiDivLookback, true)
+[regBull60, regBear60] = detectDivergence(rsi60Close, rsi60, rsiDivLookback, true)
+
+[hidBull15, hidBear15] = detectDivergence(rsi15Close, rsi15, rsiDivLookback, false)
+[hidBull30, hidBear30] = detectDivergence(rsi30Close, rsi30, rsiDivLookback, false)
+[hidBull60, hidBear60] = detectDivergence(rsi60Close, rsi60, rsiDivLookback, false)
+
+// Affichage divergences
+if rsiDivShow
+    // Regular divergences
+    if rsiShowRegular
+        if regBullDiv
+            label.new(bar_index, low, "div-CTF", style=label.style_label_up,
+                      color=color.new(colorBull, 0), textcolor=color.white, size=size.tiny)
+        if regBearDiv
+            label.new(bar_index, high, "div-CTF", style=label.style_label_down,
+                      color=color.new(colorBear, 0), textcolor=color.white, size=size.tiny)
+        
+        if regBull15
+            label.new(bar_index, low, "div-15m", style=label.style_label_up,
+                      color=color.new(colorBull, 30), textcolor=color.white, size=size.tiny)
+        if regBear15
+            label.new(bar_index, high, "div-15m", style=label.style_label_down,
+                      color=color.new(colorBear, 30), textcolor=color.white, size=size.tiny)
+    
+    // Hidden divergences
+    if rsiShowHidden
+        if hidBullDiv
+            label.new(bar_index, low, "Hdiv-CTF", style=label.style_label_up,
+                      color=color.new(colorBull, 50), textcolor=color.white, size=size.tiny)
+        if hidBearDiv
+            label.new(bar_index, high, "Hdiv-CTF", style=label.style_label_down,
+                      color=color.new(colorBear, 50), textcolor=color.white, size=size.tiny)
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📐 SMC/MSS/BOS - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Pivots pour structure SMC
+smcPivotH = ta.pivothigh(high, smcPivotLength, smcPivotLength)
+smcPivotL = ta.pivotlow(low, smcPivotLength, smcPivotLength)
+
+// Variables pour tracker structure
+var float lastHigher = na
+var float lastLower = na
+var bool currentTrend = true  // true = bullish, false = bearish
+
+// Market Structure Shift (MSS) detection
+mssDetected = false
+mssLabel = ""
+
+// Break of Structure (BOS) detection  
+bosDetected = false
+bosLabel = ""
+
+// Change of Character (CHoCH) detection
+chochDetected = false
+
+if not na(smcPivotH)
+    if na(lastHigher) or smcPivotH > lastHigher
+        // New higher high
+        lastHigher := smcPivotH
+        if currentTrend
+            bosDetected := true
+            bosLabel := "BOS"
+        else
+            // Trend change from bear to bull
+            chochDetected := true
+            mssDetected := true
+            mssLabel := "MSS"
+            currentTrend := true
+    else if smcPivotH < lastHigher
+        // Lower high - possible trend change
+        if currentTrend
+            chochDetected := true
+
+if not na(smcPivotL)
+    if na(lastLower) or smcPivotL < lastLower
+        // New lower low
+        lastLower := smcPivotL
+        if not currentTrend
+            bosDetected := true
+            bosLabel := "BOS"
+        else
+            // Trend change from bull to bear
+            chochDetected := true
+            mssDetected := true
+            mssLabel := "MSS"
+            currentTrend := false
+    else if smcPivotL > lastLower
+        // Higher low - possible trend change
+        if not currentTrend
+            chochDetected := true
+
+// Affichage SMC
+if smcShow
+    if smcShowMSS and mssDetected
+        label.new(bar_index[smcPivotLength], high[smcPivotLength], mssLabel,
+                  style=label.style_label_down, color=color.new(color.orange, 0),
+                  textcolor=color.white, size=size.normal)
+    
+    if smcShowBOS and bosDetected
+        label.new(bar_index[smcPivotLength], currentTrend ? low[smcPivotLength] : high[smcPivotLength], bosLabel,
+                  style=currentTrend ? label.style_label_up : label.style_label_down,
+                  color=color.new(currentTrend ? colorBull : colorBear, 0),
+                  textcolor=color.white, size=size.small)
+    
+    if smcShowCHoCH and chochDetected
+        label.new(bar_index[smcPivotLength], high[smcPivotLength], "CHoCH",
+                  style=label.style_label_down, color=color.new(color.yellow, 0),
+                  textcolor=color.black, size=size.small)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📈 TREND LINES AUTO - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Pivots pour trend lines
+trendPivotH = ta.pivothigh(high, trendLinePivotLength, trendLinePivotLength)
+trendPivotL = ta.pivotlow(low, trendLinePivotLength, trendLinePivotLength)
+
+// Arrays pour stocker points de trendlines
+var array<float> trendHighPrices = array.new_float(0)
+var array<int> trendHighBars = array.new_int(0)
+var array<float> trendLowPrices = array.new_float(0)
+var array<int> trendLowBars = array.new_int(0)
+
+// Ajouter nouveaux pivots
+if not na(trendPivotH)
+    array.push(trendHighPrices, trendPivotH)
+    array.push(trendHighBars, bar_index - trendLinePivotLength)
+    if array.size(trendHighPrices) > 5
+        array.shift(trendHighPrices)
+        array.shift(trendHighBars)
+
+if not na(trendPivotL)
+    array.push(trendLowPrices, trendPivotL)
+    array.push(trendLowBars, bar_index - trendLinePivotLength)
+    if array.size(trendLowPrices) > 5
+        array.shift(trendLowPrices)
+        array.shift(trendLowBars)
+
+// Dessiner trendlines
+if trendLineShow and barstate.islast
+    // Resistance trendline (connect highs)
+    if array.size(trendHighPrices) >= 2
+        size = array.size(trendHighPrices)
+        price1 = array.get(trendHighPrices, size - 2)
+        bar1 = array.get(trendHighBars, size - 2)
+        price2 = array.get(trendHighPrices, size - 1)
+        bar2 = array.get(trendHighBars, size - 1)
+        
+        // Calculer pente et extension
+        slope = (price2 - price1) / (bar2 - bar1)
+        extendedPrice = price2 + (slope * trendLineExtend)
+        
+        line.new(bar1, price1, bar2 + trendLineExtend, extendedPrice,
+                 color=color.new(colorBear, 30), width=trendLineWidth, 
+                 style=line.style_solid, extend=extend.none)
+    
+    // Support trendline (connect lows)
+    if array.size(trendLowPrices) >= 2
+        size = array.size(trendLowPrices)
+        price1 = array.get(trendLowPrices, size - 2)
+        bar1 = array.get(trendLowBars, size - 2)
+        price2 = array.get(trendLowPrices, size - 1)
+        bar2 = array.get(trendLowBars, size - 1)
+        
+        // Calculer pente et extension
+        slope = (price2 - price1) / (bar2 - bar1)
+        extendedPrice = price2 + (slope * trendLineExtend)
+        
+        line.new(bar1, price1, bar2 + trendLineExtend, extendedPrice,
+                 color=color.new(colorBull, 30), width=trendLineWidth,
+                 style=line.style_solid, extend=extend.none)
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 💎 FVG AMÉLIORÉ - IMPLÉMENTATION ICT COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Time session filtering
+inAMSession = fvgSessionFilter ? time(timeframe.period, fvgAMSession) : true
+inPMSession = fvgSessionFilter ? time(timeframe.period, fvgPMSession) : true
+inTargetSession = inAMSession or inPMSession
+
+// FVG Detection amélioré
+bullishFVG = low > high[2] and (not fvgSessionFilter or inTargetSession)
+bearishFVG = high < low[2] and (not fvgSessionFilter or inTargetSession)
+
+// Calcul taille FVG
+fvgSizeBull = bullishFVG ? ((low - high[2]) / close) * 100 : 0
+fvgSizeBear = bearishFVG ? ((low[2] - high) / close) * 100 : 0
+
+// Filtrage ATR
+validBullFVG = bullishFVG and fvgSizeBull >= fvgMinSize and (low - high[2]) >= atr * 0.5
+validBearFVG = bearishFVG and fvgSizeBear >= fvgMinSize and (low[2] - high) >= atr * 0.5
+
+// Arrays pour tracker FVG et iFVG
+var array<float> fvgTopPrices = array.new_float(0)
+var array<float> fvgBotPrices = array.new_float(0)
+var array<bool> fvgIsBull = array.new_bool(0)
+var array<int> fvgBars = array.new_int(0)
+var array<bool> fvgMitigated = array.new_bool(0)
+
+// Ajouter nouveaux FVG
+if validBullFVG
+    array.push(fvgTopPrices, low)
+    array.push(fvgBotPrices, high[2])
+    array.push(fvgIsBull, true)
+    array.push(fvgBars, bar_index - 2)
+    array.push(fvgMitigated, false)
+
+if validBearFVG
+    array.push(fvgTopPrices, low[2])
+    array.push(fvgBotPrices, high)
+    array.push(fvgIsBull, false)
+    array.push(fvgBars, bar_index - 2)
+    array.push(fvgMitigated, false)
+
+// Limiter nombre de FVG
+while array.size(fvgTopPrices) > 30
+    array.shift(fvgTopPrices)
+    array.shift(fvgBotPrices)
+    array.shift(fvgIsBull)
+    array.shift(fvgBars)
+    array.shift(fvgMitigated)
+
+// Détection mitigation et retest (iFVG)
+for i = 0 to array.size(fvgTopPrices) - 1
+    if not array.get(fvgMitigated, i)
+        topPrice = array.get(fvgTopPrices, i)
+        botPrice = array.get(fvgBotPrices, i)
+        isBull = array.get(fvgIsBull, i)
+        
+        // Check mitigation
+        mitigated = false
+        if fvgRetestMode == "Close"
+            mitigated := (isBull and close < botPrice) or (not isBull and close > topPrice)
+        else  // Wick mode
+            mitigated := (isBull and low < botPrice) or (not isBull and high > topPrice)
+        
+        if mitigated
+            array.set(fvgMitigated, i, true)
+
+// Affichage FVG
+if fvgShow
+    for i = 0 to array.size(fvgTopPrices) - 1
+        topPrice = array.get(fvgTopPrices, i)
+        botPrice = array.get(fvgBotPrices, i)
+        isBull = array.get(fvgIsBull, i)
+        fvgBar = array.get(fvgBars, i)
+        mitigated = array.get(fvgMitigated, i)
+        
+        // FVG non-mitigé ou iFVG si showiFVG
+        if not mitigated or fvgShowiFVG
+            fvgColor = mitigated ? color.purple : (isBull ? colorBull : colorBear)
+            box.new(fvgBar, topPrice, bar_index + 5, botPrice,
+                    border_color=color.new(fvgColor, 70),
+                    bgcolor=color.new(fvgColor, mitigated ? 95 : 90))
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🚩 FLAGS & BREAKOUTS - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Détection d'impulsion (mouvement fort)
+priceChange = close - close[flagConsolidationBars]
+impulseSize = math.abs(priceChange)
+isStrongImpulse = impulseSize >= atr * flagMinImpulse
+
+// Variables pour tracker flags
+var float flagHighPrice = na
+var float flagLowPrice = na
+var int flagStartBar = na
+var bool inFlag = false
+var bool impulseWasBullish = na
+
+// Détecter début de flag (après impulsion)
+if isStrongImpulse and not inFlag
+    inFlag := true
+    impulseWasBullish := priceChange > 0
+    flagHighPrice := high
+    flagLowPrice := low
+    flagStartBar := bar_index
+
+// Tracker consolidation dans flag
+if inFlag
+    flagHighPrice := math.max(flagHighPrice, high)
+    flagLowPrice := math.min(flagLowPrice, low)
+    
+    // Breakout detection
+    flagRange = flagHighPrice - flagLowPrice
+    
+    if impulseWasBullish
+        // Flag bullish: attendre breakout haussier
+        if close > flagHighPrice
+            if flagShow and flagShowFlag
+                // Dessiner le flag
+                box.new(flagStartBar, flagHighPrice, bar_index, flagLowPrice,
+                        border_color=color.new(colorBull, 50),
+                        bgcolor=color.new(colorBull, 90))
+                label.new(bar_index, flagHighPrice, "FLAG ▲",
+                          style=label.style_label_down, color=colorBull,
+                          textcolor=color.white, size=size.small)
+            inFlag := false
+        else if close < flagLowPrice
+            // Invalidation
+            inFlag := false
+    else
+        // Flag bearish: attendre breakout baissier
+        if close < flagLowPrice
+            if flagShow and flagShowFlag
+                // Dessiner le flag
+                box.new(flagStartBar, flagHighPrice, bar_index, flagLowPrice,
+                        border_color=color.new(colorBear, 50),
+                        bgcolor=color.new(colorBear, 90))
+                label.new(bar_index, flagLowPrice, "FLAG ▼",
+                          style=label.style_label_up, color=colorBear,
+                          textcolor=color.white, size=size.small)
+            inFlag := false
+        else if close > flagHighPrice
+            // Invalidation
+            inFlag := false
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎨 TRIANGLES SPÉCIAUX & PRIX ENTRÉE OPTIMAUX
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Déterminer couleur triangle selon contexte
+triangleColorBull = color.green
+triangleColorBear = color.red
+
+// Si englobante sur Order Block HTF → Triangle ORANGE
+if (isBullishEngulfing or isBearishEngulfing) and onOrderBlock
+    triangleColorBull := color.orange
+    triangleColorBear := color.orange
+
+// Si englobante sur zone Fibo clé → Triangle JAUNE
+if (isBullishEngulfing or isBearishEngulfing) and onFiboKeyZone
+    triangleColorBull := color.yellow
+    triangleColorBear := color.yellow
+
+// Afficher triangles engulfing avec couleurs spéciales
+plotshape(engulfingShow and isBullishEngulfing, "Bull Engulfing Special", 
+          shape.triangleup, location.belowbar, triangleColorBull, size=size.small)
+plotshape(engulfingShow and isBearishEngulfing, "Bear Engulfing Special",
+          shape.triangledown, location.abovebar, triangleColorBear, size=size.small)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎯 CALCUL PRIX ENTRÉE OPTIMAUX
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Prix d'entrée optimal considérant multiple facteurs
+optimalLongEntry = close
+optimalShortEntry = close
+
+// Ajuster selon proximité zones importantes
+proximityAdjustment = atr * 0.2
+
+// Si proche d'un Order Block, ajuster entrée
+if onOrderBlock
+    // Chercher OB le plus proche
+    for i = 0 to array.size(obPrices) - 1
+        if array.get(obIsValid, i)
+            obPrice = array.get(obPrices, i)
+            obBull = array.get(obIsBullish, i)
+            if math.abs(close - obPrice) <= atr * 0.5
+                if obBull and close > obPrice
+                    optimalLongEntry := math.max(optimalLongEntry, obPrice + proximityAdjustment)
+                if not obBull and close < obPrice
+                    optimalShortEntry := math.min(optimalShortEntry, obPrice - proximityAdjustment)
+
+// Si proche d'une zone Fibo, ajuster entrée
+if onFiboKeyZone
+    for i = 0 to array.size(fiboStarts) - 1
+        if array.get(fiboIsValid, i)
+            startPrice = array.get(fiboStarts, i)
+            endPrice = array.get(fiboEnds, i)
+            isBull = array.get(fiboIsBullish, i)
+            range = math.abs(startPrice - endPrice)
+            
+            // Calculer Golden Pocket (50-61.8%)
+            level_50 = isBull ? endPrice + range * 0.500 : startPrice - range * 0.500
+            level_618 = isBull ? endPrice + range * 0.618 : startPrice - range * 0.618
+            
+            if math.abs(close - level_618) <= atr * 0.3
+                if isBull
+                    optimalLongEntry := level_618 + proximityAdjustment
+                else
+                    optimalShortEntry := level_618 - proximityAdjustment
+
+// Recalculer SL/TP avec prix optimaux
+optLongSL = optimalLongEntry - (atr * atrMultiplierSL)
+optLongTP1 = optimalLongEntry + (atr * atrMultiplierTP1)
+optLongTP2 = optimalLongEntry + (atr * atrMultiplierTP2)
+optLongTP3 = optimalLongEntry + (atr * atrMultiplierTP3)
+
+optShortSL = optimalShortEntry + (atr * atrMultiplierSL)
+optShortTP1 = optimalShortEntry - (atr * atrMultiplierTP1)
+optShortTP2 = optimalShortEntry - (atr * atrMultiplierTP2)
+optShortTP3 = optimalShortEntry - (atr * atrMultiplierTP3)
+
+// Recalculer RR et Lot avec prix optimaux
+optLongRiskPoints = optimalLongEntry - optLongSL
+optLongRewardPoints = optLongTP1 - optimalLongEntry
+optLongRR = optLongRiskPoints > 0 ? optLongRewardPoints / optLongRiskPoints : 0
+optLongLotSize = optLongRiskPoints > 0 ? riskAmount / optLongRiskPoints : 0
+
+optShortRiskPoints = optShortSL - optimalShortEntry
+optShortRewardPoints = optimalShortEntry - optShortTP1
+optShortRR = optShortRiskPoints > 0 ? optShortRewardPoints / optShortRiskPoints : 0
+optShortLotSize = optShortRiskPoints > 0 ? riskAmount / optShortRiskPoints : 0
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📊 SETUP LABELS AMÉLIORÉS (avec TP2/TP3)
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Setup Labels améliorés sur le graphique
+if showSetupLabels and longCondition and ta.change(longCondition)
+    labelText = "🚀 LONG SETUP\n" + 
+                 "Entry: " + str.tostring(optimalLongEntry, format.mintick) + "\n" +
+                 "SL: " + str.tostring(optLongSL, format.mintick) + "\n" +
+                 "TP1: " + str.tostring(optLongTP1, format.mintick) + "\n" +
+                 "TP2: " + str.tostring(optLongTP2, format.mintick) + "\n" +
+                 "TP3: " + str.tostring(optLongTP3, format.mintick) + "\n" +
+                 "RR: " + str.tostring(optLongRR, "#.##") + "\n" +
+                 "Lot: " + str.tostring(optLongLotSize, "#.##")
+    label.new(bar_index, low, labelText, style=label.style_label_up, 
+              color=color.new(colorBull, 10), textcolor=color.white, size=size.normal)
+
+if showSetupLabels and shortCondition and ta.change(shortCondition)
+    labelText = "🔻 SHORT SETUP\n" + 
+                 "Entry: " + str.tostring(optimalShortEntry, format.mintick) + "\n" +
+                 "SL: " + str.tostring(optShortSL, format.mintick) + "\n" +
+                 "TP1: " + str.tostring(optShortTP1, format.mintick) + "\n" +
+                 "TP2: " + str.tostring(optShortTP2, format.mintick) + "\n" +
+                 "TP3: " + str.tostring(optShortTP3, format.mintick) + "\n" +
+                 "RR: " + str.tostring(optShortRR, "#.##") + "\n" +
+                 "Lot: " + str.tostring(optShortLotSize, "#.##")
+    label.new(bar_index, high, labelText, style=label.style_label_down,
+              color=color.new(colorBear, 10), textcolor=color.white, size=size.normal)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎉 FIN DES NOUVEAUX MODULES
+// ════════════════════════════════════════════════════════════════════════════════
+

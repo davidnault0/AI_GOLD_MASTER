@@ -1,0 +1,66 @@
+MODULES À AJOUTER AU CODE FINAL:
+
+1. FIBONACCI AUTO COMPLET
+   - Arrays pour stocker 50 zones Fibo
+   - Détection swing highs/lows avec pivots
+   - Calcul niveaux: 0%, 23.6%, 38.2%, 50%, 61.8%, 78.6%, 88.6%, 100%
+   - Zones clés highlight (50-61.8% et 78.6-88.6%)
+   - Système validation/invalidation
+   - Triangles jaunes pour englobantes sur zones Fibo
+
+2. ORDER BLOCKS HTF
+   - Request security M30, H1, H4, D1
+   - Détection à fermeture englobante
+   - OB = prix d'ouverture bougie englobée précédente
+   - Labels avec TF
+   - Triangles orange pour englobantes sur OB
+
+3. SMC/MSS/BOS
+   - Market Structure Shift detection
+   - Break of Structure
+   - Change of Character (CHoCH)
+   - Supply/Demand zones avec pivots
+
+4. FVG AMÉLIORÉ
+   - Fenêtres 10 minutes ICT
+   - Sessions AM/PM (9:30-10:00, 13:30-14:00 EST)
+   - iFVG (inversions)
+   - Retest signals (Close/Wick)
+   - Filtrage ATR
+
+5. RSI DIVERGENCE MTF
+   - Hidden divergence (bull/bear)
+   - Regular divergence (bull/bear)  
+   - MTF: M15, M30, H1, H4, D
+   - Labels "div-TF" rouge/vert
+
+6. PDH/PDL/WEEKLY OHLC
+   - Previous Day High/Low
+   - Previous Week High/Low
+   - Daily/Weekly/Monthly opens
+   - Initial Balance
+   - Lignes horizontales étendues
+
+7. TREND LINES AUTO
+   - Détection tendances avec pivots
+   - Ligne résistance au-dessus
+   - Ligne support en-dessous
+   - Extension dans futur
+   - Invalidation breakout
+
+8. FLAGS & BREAKOUTS
+   - Zones compression après impulsion
+   - Flag bullish/bearish
+   - Wedge bullish/bearish
+   - Traçage boxes/lignes
+   - Validation direction breakout
+
+9. PRIX D'ENTRÉE OPTIMAUX
+   - Considérer zones Fibo
+   - Considérer Order Blocks
+   - Considérer Liquidity zones
+   - TP2 et TP3 dans labels
+
+10. TRIANGLES SPÉCIAUX
+    - Orange: Engulfing + OB HTF
+    - Jaune: Engulfing + Fibo zone
