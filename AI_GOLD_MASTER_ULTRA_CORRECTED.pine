@@ -920,9 +920,9 @@ if obShow
 // ════════════════════════════════════════════════════════════════════════════════
 
 // Request previous day/week data
-[pdh, pdl, pdo, pdc] = request.security(syminfo.tickerid, "D", [high[1], low[1], open, close[1]], lookahead=barmerge.lookahead_on)
-[pwh, pwl, pwo] = request.security(syminfo.tickerid, "W", [high[1], low[1], open], lookahead=barmerge.lookahead_on)
-[pmo] = request.security(syminfo.tickerid, "M", [open], lookahead=barmerge.lookahead_on)
+[pdh, pdl, pdo, pdc] = request.security(syminfo.tickerid, "D", [high[1], low[1], open[1], close[1]], lookahead=barmerge.lookahead_on)
+[pwh, pwl, pwo] = request.security(syminfo.tickerid, "W", [high[1], low[1], open[0]], lookahead=barmerge.lookahead_on)
+pmo = request.security(syminfo.tickerid, "M", open[0], lookahead=barmerge.lookahead_on)
 
 // Affichage PDH/PDL/Weekly
 if pdhShow
