@@ -1,1 +1,12 @@
-{"name":"ai_gold_master","version":"1.0.0","description":"Automated testing for Pine Script using Puppeteer.","main":"compile_pine_script.js","scripts":{"test":"node compile_pine_script.js"},"dependencies":{"puppeteer":"^20.0.0"}}
+{
+  "name": "ai_gold_master",
+  "version": "1.0.0",
+  "description": "Automated testing for Pine Script using Puppeteer.",
+  "main": "compile_pine_script.js",
+  "scripts": {
+    "test": "node compile_pine_script.js"
+  },
+  "dependencies": {
+    "puppeteer": "^20.0.0"
+  }
+}
