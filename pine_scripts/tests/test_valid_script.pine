@@ -1,0 +1,10 @@
+//@version=6
+indicator("Test Valid Script", overlay=true)
+
+// This file tests basic Pine Script v6 features
+
+// Calculate SMA with proper syntax
+smaValue = ta.sma(close, 14)
+
+// Plot
+plot(smaValue, color=color.blue, title="SMA 14")

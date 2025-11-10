@@ -1,0 +1,18 @@
+//@version=6
+indicator("MACD with Signal", overlay=false)
+
+// Input parameters
+fastLength = input.int(12, "Fast Length", minval=1)
+slowLength = input.int(26, "Slow Length", minval=1)
+signalLength = input.int(9, "Signal Length", minval=1)
+
+// Calculate MACD
+[macdLine, signalLine, histLine] = ta.macd(close, fastLength, slowLength, signalLength)
+
+// Plot MACD components
+plot(macdLine, "MACD", color=color.blue, linewidth=2)
+plot(signalLine, "Signal", color=color.orange, linewidth=2)
+plot(histLine, "Histogram", color=histLine >= 0 ? color.green : color.red, style=plot.style_histogram)
+
+// Zero line
+hline(0, "Zero Line", color=color.gray, linestyle=hline.style_solid)

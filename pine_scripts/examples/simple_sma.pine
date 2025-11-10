@@ -1,0 +1,15 @@
+//@version=6
+indicator("Simple Moving Average", overlay=true)
+
+// Input parameters
+lengthInput = input.int(14, "SMA Length", minval=1)
+sourceInput = input.source(close, "Source")
+
+// Calculate SMA
+smaValue = ta.sma(sourceInput, lengthInput)
+
+// Plot the SMA
+plot(smaValue, color=color.blue, linewidth=2, title="SMA")
+
+// Optional: Add horizontal line at current price
+hline(close, "Current Price", color=color.gray, linestyle=hline.style_dashed)

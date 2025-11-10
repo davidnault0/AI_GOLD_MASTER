@@ -1,0 +1,29 @@
+//@version=6
+strategy("Simple EMA Crossover Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Input parameters
+fastLength = input.int(9, "Fast EMA Length", minval=1)
+slowLength = input.int(21, "Slow EMA Length", minval=1)
+
+// Calculate EMAs
+fastEMA = ta.ema(close, fastLength)
+slowEMA = ta.ema(close, slowLength)
+
+// Plot EMAs
+plot(fastEMA, "Fast EMA", color=color.blue, linewidth=2)
+plot(slowEMA, "Slow EMA", color=color.red, linewidth=2)
+
+// Strategy logic
+longCondition = ta.crossover(fastEMA, slowEMA)
+shortCondition = ta.crossunder(fastEMA, slowEMA)
+
+// Execute trades
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if shortCondition
+    strategy.close("Long")
+
+// Plot signals
+plotshape(longCondition, "Buy Signal", shape.triangleup, location.belowbar, color.green, size=size.small)
+plotshape(shortCondition, "Sell Signal", shape.triangledown, location.abovebar, color.red, size=size.small)

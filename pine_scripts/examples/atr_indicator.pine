@@ -1,0 +1,19 @@
+//@version=6
+indicator("ATR (Average True Range)", overlay=false)
+
+// Input parameters
+lengthInput = input.int(14, "ATR Length", minval=1)
+
+// Calculate ATR
+atrValue = ta.atr(lengthInput)
+
+// Plot ATR
+plot(atrValue, "ATR", color=color.purple, linewidth=2)
+
+// Add a moving average of ATR
+atrMA = ta.sma(atrValue, lengthInput)
+plot(atrMA, "ATR MA", color=color.blue, linewidth=1, style=plot.style_line)
+
+// Background coloring for high volatility
+highVolatility = atrValue > atrMA * 1.5
+bgcolor(highVolatility ? color.new(color.red, 90) : na, title="High Volatility")

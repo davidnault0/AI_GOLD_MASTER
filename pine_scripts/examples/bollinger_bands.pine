@@ -1,0 +1,21 @@
+//@version=6
+indicator("Bollinger Bands", overlay=true)
+
+// Input parameters
+lengthInput = input.int(20, "Length", minval=1)
+multInput = input.float(2.0, "Standard Deviation Multiplier", minval=0.1, step=0.1)
+sourceInput = input.source(close, "Source")
+
+// Calculate Bollinger Bands
+basis = ta.sma(sourceInput, lengthInput)
+dev = multInput * ta.stdev(sourceInput, lengthInput)
+upperBand = basis + dev
+lowerBand = basis - dev
+
+// Plot Bollinger Bands
+plot(basis, "Basis", color=color.yellow, linewidth=2)
+p1 = plot(upperBand, "Upper Band", color=color.red, linewidth=1)
+p2 = plot(lowerBand, "Lower Band", color=color.green, linewidth=1)
+
+// Fill between bands
+fill(p1, p2, color=color.new(color.blue, 90), title="Band Fill")
