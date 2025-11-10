@@ -1,0 +1,36 @@
+name: PineScript Automated Testing
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  puppeteer-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Run Puppeteer Tests
+      run: npm test
+      env:
+        TRADINGVIEW_EMAIL: ${{ secrets.TRADINGVIEW_EMAIL }}
+        TRADINGVIEW_PASSWORD: ${{ secrets.TRADINGVIEW_PASSWORD }}
+
+    - name: Save Compilation Logs
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Puppeteer-Logs
+        path: logs/
