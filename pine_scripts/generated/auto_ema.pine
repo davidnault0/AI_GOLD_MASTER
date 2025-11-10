@@ -1,0 +1,12 @@
+//@version=6
+indicator("Auto Generated EMA", overlay=true)
+
+// Input parameters
+lengthInput = input.int(9, "Length", minval=1)
+sourceInput = input.source(close, "Source")
+
+// Calculate indicator
+indicatorValue = ta.ema(sourceInput, lengthInput)
+
+// Plot
+plot(indicatorValue, "Auto Generated EMA", color=color.red, linewidth=2)

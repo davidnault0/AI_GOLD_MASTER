@@ -1,0 +1,28 @@
+//@version=6
+indicator("Stochastic RSI", overlay=false)
+
+// Input parameters
+lengthRSI = input.int(14, "RSI Length", minval=1)
+lengthStoch = input.int(14, "Stochastic Length", minval=1)
+smoothK = input.int(3, "K Smoothing", minval=1)
+smoothD = input.int(3, "D Smoothing", minval=1)
+
+// Calculate RSI
+rsi = ta.rsi(close, lengthRSI)
+
+// Calculate Stochastic of RSI
+k = ta.sma(ta.stoch(rsi, rsi, rsi, lengthStoch), smoothK)
+d = ta.sma(k, smoothD)
+
+// Plot lines
+plot(k, "K", color=color.blue, linewidth=2)
+plot(d, "D", color=color.orange, linewidth=2)
+
+// Overbought and oversold levels
+hline(80, "Overbought", color=color.red, linestyle=hline.style_dashed)
+hline(20, "Oversold", color=color.green, linestyle=hline.style_dashed)
+hline(50, "Middle", color=color.gray, linestyle=hline.style_dotted)
+
+// Background colors
+bgcolor(k > 80 ? color.new(color.red, 90) : na)
+bgcolor(k < 20 ? color.new(color.green, 90) : na)

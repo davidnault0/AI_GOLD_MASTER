@@ -1,12 +1,21 @@
 {
   "name": "ai_gold_master",
-  "version": "1.0.0",
-  "description": "Automated testing for Pine Script using Puppeteer.",
-  "main": "compile_pine_script.js",
+  "version": "2.0.0",
+  "description": "Automated testing and validation for Pine Script v6 with complete knowledge base",
+  "main": "pine_validator.js",
   "scripts": {
-    "test": "node compile_pine_script.js"
+    "test": "node pine_test_runner.js",
+    "test:multi-level": "node multi_level_validator.js pine_scripts/examples/",
+    "validate": "node pine_validator.js pine_scripts/examples/",
+    "generate": "node pine_generator.js",
+    "test:puppeteer": "node pine_puppeteer_test.js",
+    "test:full": "npm test && npm run test:puppeteer",
+    "test:tradingview": "node test_on_tradingview.js",
+    "test:tradingview:single": "node tradingview_real_tester.js",
+    "test:auto-correct": "node auto_correcting_tester.js",
+    "test:complete": "npm run test:multi-level && npm test"
   },
-  "dependencies": {
-    "puppeteer": "^20.0.0"
+  "optionalDependencies": {
+    "puppeteer": "^20.9.0"
   }
 }

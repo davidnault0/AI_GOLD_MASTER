@@ -1,0 +1,729 @@
+{
+  "version": "6.0",
+  "last_updated": "2024-11-10",
+  "description": "Base de connaissances COMPLÈTE Pine Script v6 - TOUT ce qu'il faut savoir",
+  
+  "functions": {
+    "ta": {
+      "moving_averages": {
+        "ta.sma": {
+          "signature": "ta.sma(source, length)",
+          "description": "Simple Moving Average",
+          "returns": "series float",
+          "example": "sma20 = ta.sma(close, 20)",
+          "parameters": {
+            "source": "series float - Source des données",
+            "length": "simple int - Période"
+          }
+        },
+        "ta.ema": {
+          "signature": "ta.ema(source, length)",
+          "description": "Exponential Moving Average",
+          "returns": "series float",
+          "example": "ema12 = ta.ema(close, 12)",
+          "parameters": {
+            "source": "series float - Source des données",
+            "length": "simple int - Période"
+          }
+        },
+        "ta.wma": {
+          "signature": "ta.wma(source, length)",
+          "description": "Weighted Moving Average",
+          "returns": "series float",
+          "example": "wma14 = ta.wma(close, 14)"
+        },
+        "ta.vwma": {
+          "signature": "ta.vwma(source, length)",
+          "description": "Volume Weighted Moving Average",
+          "returns": "series float",
+          "example": "vwma20 = ta.vwma(close, 20)"
+        },
+        "ta.alma": {
+          "signature": "ta.alma(series, length, offset, sigma)",
+          "description": "Arnaud Legoux Moving Average",
+          "returns": "series float",
+          "example": "alma9 = ta.alma(close, 9, 0.85, 6)"
+        }
+      },
+      "momentum": {
+        "ta.rsi": {
+          "signature": "ta.rsi(source, length)",
+          "description": "Relative Strength Index",
+          "returns": "series float",
+          "range": "0 to 100",
+          "example": "rsi14 = ta.rsi(close, 14)",
+          "common_levels": {
+            "overbought": 70,
+            "oversold": 30
+          }
+        },
+        "ta.macd": {
+          "signature": "ta.macd(source, fastlen, slowlen, siglen)",
+          "description": "Moving Average Convergence Divergence",
+          "returns": "[series float, series float, series float]",
+          "example": "[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)",
+          "parameters": {
+            "source": "series float",
+            "fastlen": "simple int - Fast length (default 12)",
+            "slowlen": "simple int - Slow length (default 26)",
+            "siglen": "simple int - Signal length (default 9)"
+          }
+        },
+        "ta.stoch": {
+          "signature": "ta.stoch(source, high, low, length)",
+          "description": "Stochastic",
+          "returns": "series float",
+          "example": "k = ta.stoch(close, high, low, 14)"
+        },
+        "ta.cci": {
+          "signature": "ta.cci(source, length)",
+          "description": "Commodity Channel Index",
+          "returns": "series float",
+          "example": "cci20 = ta.cci(close, 20)"
+        },
+        "ta.mfi": {
+          "signature": "ta.mfi(series, length)",
+          "description": "Money Flow Index",
+          "returns": "series float",
+          "example": "mfi14 = ta.mfi(hlc3, 14)"
+        },
+        "ta.mom": {
+          "signature": "ta.mom(source, length)",
+          "description": "Momentum",
+          "returns": "series float",
+          "example": "momentum = ta.mom(close, 10)"
+        },
+        "ta.roc": {
+          "signature": "ta.roc(source, length)",
+          "description": "Rate of Change (percentage)",
+          "returns": "series float",
+          "example": "roc10 = ta.roc(close, 10)"
+        }
+      },
+      "volatility": {
+        "ta.atr": {
+          "signature": "ta.atr(length)",
+          "description": "Average True Range",
+          "returns": "series float",
+          "example": "atr14 = ta.atr(14)",
+          "usage": "Mesure de volatilité"
+        },
+        "ta.bb": {
+          "signature": "ta.bb(source, length, mult)",
+          "description": "Bollinger Bands",
+          "returns": "[series float, series float, series float]",
+          "example": "[basis, upper, lower] = ta.bb(close, 20, 2.0)",
+          "parameters": {
+            "source": "series float",
+            "length": "simple int - Period",
+            "mult": "simple float - Standard deviation multiplier"
+          }
+        },
+        "ta.stdev": {
+          "signature": "ta.stdev(source, length)",
+          "description": "Standard Deviation",
+          "returns": "series float",
+          "example": "stddev = ta.stdev(close, 20)"
+        },
+        "ta.tr": {
+          "signature": "ta.tr(handle_na)",
+          "description": "True Range",
+          "returns": "series float",
+          "example": "tr = ta.tr(true)"
+        }
+      },
+      "volume": {
+        "ta.vwap": {
+          "signature": "ta.vwap(source)",
+          "description": "Volume Weighted Average Price",
+          "returns": "series float",
+          "example": "vwapValue = ta.vwap(close)",
+          "note": "Resets at the beginning of each session"
+        }
+      },
+      "crossovers": {
+        "ta.crossover": {
+          "signature": "ta.crossover(source1, source2)",
+          "description": "Returns true if source1 crosses over source2",
+          "returns": "series bool",
+          "example": "bullishCross = ta.crossover(fastMA, slowMA)"
+        },
+        "ta.crossunder": {
+          "signature": "ta.crossunder(source1, source2)",
+          "description": "Returns true if source1 crosses under source2",
+          "returns": "series bool",
+          "example": "bearishCross = ta.crossunder(fastMA, slowMA)"
+        },
+        "ta.cross": {
+          "signature": "ta.cross(source1, source2)",
+          "description": "Returns true if source1 crosses source2 in any direction",
+          "returns": "series bool",
+          "example": "anyCross = ta.cross(price, level)"
+        }
+      },
+      "extremums": {
+        "ta.highest": {
+          "signature": "ta.highest(source, length)",
+          "description": "Highest value over N bars",
+          "returns": "series float",
+          "example": "highest20 = ta.highest(high, 20)"
+        },
+        "ta.lowest": {
+          "signature": "ta.lowest(source, length)",
+          "description": "Lowest value over N bars",
+          "returns": "series float",
+          "example": "lowest20 = ta.lowest(low, 20)"
+        },
+        "ta.highestbars": {
+          "signature": "ta.highestbars(source, length)",
+          "description": "Offset to the highest bar",
+          "returns": "series int",
+          "example": "highestBar = ta.highestbars(high, 20)"
+        },
+        "ta.lowestbars": {
+          "signature": "ta.lowestbars(source, length)",
+          "description": "Offset to the lowest bar",
+          "returns": "series int",
+          "example": "lowestBar = ta.lowestbars(low, 20)"
+        }
+      },
+      "changes": {
+        "ta.change": {
+          "signature": "ta.change(source, length)",
+          "description": "Difference between current value and value N bars ago",
+          "returns": "series float",
+          "example": "change10 = ta.change(close, 10)",
+          "default_length": 1
+        }
+      },
+      "accumulation": {
+        "ta.cum": {
+          "signature": "ta.cum(source)",
+          "description": "Cumulative sum",
+          "returns": "series float",
+          "example": "cumVolume = ta.cum(volume)"
+        }
+      }
+    },
+    "input": {
+      "input.int": {
+        "signature": "input.int(defval, title, tooltip, inline, group, minval, maxval, step, confirm)",
+        "description": "Integer input",
+        "returns": "input int",
+        "example": "length = input.int(14, \"Period\", minval=1, maxval=500)",
+        "v6_replacement_for": "input() with integer"
+      },
+      "input.float": {
+        "signature": "input.float(defval, title, tooltip, inline, group, minval, maxval, step, confirm)",
+        "description": "Float input",
+        "returns": "input float",
+        "example": "mult = input.float(2.0, \"Multiplier\", minval=0.1, step=0.1)"
+      },
+      "input.bool": {
+        "signature": "input.bool(defval, title, tooltip, inline, group, confirm)",
+        "description": "Boolean input",
+        "returns": "input bool",
+        "example": "showSignals = input.bool(true, \"Show Signals\")"
+      },
+      "input.string": {
+        "signature": "input.string(defval, title, options, tooltip, inline, group, confirm)",
+        "description": "String input with optional dropdown",
+        "returns": "input string",
+        "example": "maType = input.string(\"SMA\", \"MA Type\", options=[\"SMA\", \"EMA\", \"WMA\"])"
+      },
+      "input.source": {
+        "signature": "input.source(defval, title, tooltip, inline, group)",
+        "description": "Price source input",
+        "returns": "series float",
+        "example": "src = input.source(close, \"Source\")",
+        "common_sources": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"]
+      },
+      "input.color": {
+        "signature": "input.color(defval, title, tooltip, inline, group, confirm)",
+        "description": "Color input",
+        "returns": "input color",
+        "example": "lineColor = input.color(color.blue, \"Line Color\")"
+      },
+      "input.timeframe": {
+        "signature": "input.timeframe(defval, title, tooltip, inline, group, confirm)",
+        "description": "Timeframe input",
+        "returns": "input string",
+        "example": "tf = input.timeframe(\"D\", \"Timeframe\")"
+      }
+    },
+    "plot": {
+      "plot": {
+        "signature": "plot(series, title, color, linewidth, style, trackprice, histbase, offset, join, editable, show_last, display)",
+        "description": "Plot series on chart",
+        "returns": "plot",
+        "example": "plot(close, \"Close\", color=color.blue, linewidth=2)",
+        "styles": [
+          "plot.style_line",
+          "plot.style_stepline",
+          "plot.style_histogram",
+          "plot.style_cross",
+          "plot.style_area",
+          "plot.style_columns",
+          "plot.style_circles",
+          "plot.style_linebr"
+        ]
+      },
+      "plotshape": {
+        "signature": "plotshape(series, title, style, location, color, size, text, textcolor, offset, editable)",
+        "description": "Plot shapes on chart",
+        "returns": "void",
+        "example": "plotshape(buySignal, \"Buy\", shape.triangleup, location.belowbar, color.green)",
+        "shapes": [
+          "shape.triangleup",
+          "shape.triangledown",
+          "shape.circle",
+          "shape.cross",
+          "shape.xcross",
+          "shape.diamond",
+          "shape.square",
+          "shape.flag",
+          "shape.arrowup",
+          "shape.arrowdown"
+        ],
+        "locations": [
+          "location.abovebar",
+          "location.belowbar",
+          "location.top",
+          "location.bottom",
+          "location.absolute"
+        ]
+      },
+      "plotchar": {
+        "signature": "plotchar(series, title, char, location, color, size, text, textcolor, offset, editable)",
+        "description": "Plot character on chart",
+        "example": "plotchar(condition, \"Signal\", \"★\", location.belowbar, color.green)"
+      },
+      "plotarrow": {
+        "signature": "plotarrow(series, title, colorup, colordown, offset, minheight, maxheight)",
+        "description": "Plot arrows",
+        "example": "plotarrow(signal, \"Arrow\", color.green, color.red)"
+      },
+      "plotcandle": {
+        "signature": "plotcandle(open, high, low, close, title, color, wickcolor, editable, bordercolor)",
+        "description": "Plot candlestick",
+        "example": "plotcandle(open, high, low, close, \"Candle\", color=color.green)"
+      },
+      "hline": {
+        "signature": "hline(price, title, color, linestyle, linewidth, editable)",
+        "description": "Horizontal line",
+        "returns": "hline",
+        "example": "hline(0, \"Zero\", color=color.gray, linestyle=hline.style_dashed)",
+        "styles": [
+          "hline.style_solid",
+          "hline.style_dashed",
+          "hline.style_dotted"
+        ]
+      },
+      "fill": {
+        "signature": "fill(plot1, plot2, color, title, editable, fillgaps)",
+        "description": "Fill area between two plots",
+        "example": "fill(p1, p2, color=color.new(color.blue, 90))"
+      },
+      "bgcolor": {
+        "signature": "bgcolor(color, offset, editable, title)",
+        "description": "Background color",
+        "example": "bgcolor(condition ? color.new(color.red, 90) : na)"
+      }
+    },
+    "strategy": {
+      "strategy.entry": {
+        "signature": "strategy.entry(id, direction, qty, limit, stop, oca_name, oca_type, comment, when, alert_message)",
+        "description": "Enter position",
+        "example": "strategy.entry(\"Long\", strategy.long, when=longCondition)",
+        "directions": ["strategy.long", "strategy.short"]
+      },
+      "strategy.close": {
+        "signature": "strategy.close(id, when, comment, qty, qty_percent, alert_message)",
+        "description": "Close position",
+        "example": "strategy.close(\"Long\", when=exitCondition)"
+      },
+      "strategy.exit": {
+        "signature": "strategy.exit(id, from_entry, qty, qty_percent, profit, limit, loss, stop, trail_price, trail_points, trail_offset, oca_name, comment, when, alert_message)",
+        "description": "Exit with profit/loss levels",
+        "example": "strategy.exit(\"Exit\", \"Long\", profit=100, loss=50)"
+      },
+      "strategy.close_all": {
+        "signature": "strategy.close_all(when, comment, alert_message)",
+        "description": "Close all positions",
+        "example": "strategy.close_all(when=emergency)"
+      }
+    },
+    "request": {
+      "request.security": {
+        "signature": "request.security(symbol, timeframe, expression, gaps, lookahead, ignore_invalid_symbol, currency)",
+        "description": "Request data from another symbol/timeframe",
+        "returns": "series",
+        "example": "dailyClose = request.security(syminfo.tickerid, \"D\", close)",
+        "v6_replacement_for": "security()",
+        "important": "Use this instead of deprecated security()"
+      }
+    },
+    "color": {
+      "color.new": {
+        "signature": "color.new(color, transp)",
+        "description": "Create color with transparency",
+        "returns": "color",
+        "example": "transparentRed = color.new(color.red, 70)",
+        "transp_range": "0 (opaque) to 100 (fully transparent)"
+      },
+      "color.rgb": {
+        "signature": "color.rgb(red, green, blue, transp)",
+        "description": "Create color from RGB values",
+        "returns": "color",
+        "example": "myColor = color.rgb(255, 128, 0, 50)",
+        "rgb_range": "0-255",
+        "transp_range": "0-100"
+      }
+    },
+    "math": {
+      "basic": {
+        "math.abs": "Absolute value",
+        "math.ceil": "Round up",
+        "math.floor": "Round down",
+        "math.round": "Round to nearest",
+        "math.max": "Maximum of two values",
+        "math.min": "Minimum of two values",
+        "math.pow": "Power (x^y)",
+        "math.sqrt": "Square root",
+        "math.exp": "Exponential (e^x)",
+        "math.log": "Natural logarithm",
+        "math.log10": "Base-10 logarithm"
+      },
+      "trigonometric": {
+        "math.sin": "Sine",
+        "math.cos": "Cosine",
+        "math.tan": "Tangent",
+        "math.asin": "Arc sine",
+        "math.acos": "Arc cosine",
+        "math.atan": "Arc tangent"
+      },
+      "constants": {
+        "math.pi": "3.14159265359",
+        "math.e": "2.71828182846"
+      }
+    },
+    "str": {
+      "str.tostring": "Convert value to string",
+      "str.tonumber": "Convert string to number",
+      "str.length": "String length",
+      "str.upper": "Convert to uppercase",
+      "str.lower": "Convert to lowercase",
+      "str.substring": "Extract substring",
+      "str.contains": "Check if string contains substring",
+      "str.pos": "Find position of substring",
+      "str.replace": "Replace substring"
+    },
+    "array": {
+      "creation": {
+        "array.new_float": "Create float array",
+        "array.new_int": "Create int array",
+        "array.new_bool": "Create bool array",
+        "array.new_string": "Create string array",
+        "array.new_color": "Create color array"
+      },
+      "manipulation": {
+        "array.size": "Get size",
+        "array.get": "Get element",
+        "array.set": "Set element",
+        "array.push": "Add to end",
+        "array.pop": "Remove from end",
+        "array.unshift": "Add to start",
+        "array.shift": "Remove from start",
+        "array.clear": "Clear all elements",
+        "array.sort": "Sort array",
+        "array.reverse": "Reverse array",
+        "array.slice": "Extract slice"
+      },
+      "aggregation": {
+        "array.sum": "Sum of elements",
+        "array.avg": "Average",
+        "array.min": "Minimum value",
+        "array.max": "Maximum value"
+      }
+    }
+  },
+  
+  "builtin_variables": {
+    "price": {
+      "open": "Opening price of the bar",
+      "high": "Highest price of the bar",
+      "low": "Lowest price of the bar",
+      "close": "Closing price of the bar",
+      "volume": "Volume of the bar",
+      "hl2": "(high + low) / 2",
+      "hlc3": "(high + low + close) / 3",
+      "ohlc4": "(open + high + low + close) / 4",
+      "hlcc4": "(high + low + close + close) / 4"
+    },
+    "time": {
+      "time": "Current bar time in UNIX format (milliseconds)",
+      "time_close": "Closing time of the current bar",
+      "timenow": "Current time when the script is calculated",
+      "year": "Current year",
+      "month": "Current month",
+      "weekofyear": "Week number of the year",
+      "dayofmonth": "Day of the month",
+      "dayofweek": "Day of the week (1=Sunday, 7=Saturday)",
+      "hour": "Current hour",
+      "minute": "Current minute",
+      "second": "Current second"
+    },
+    "bar": {
+      "bar_index": "Current bar number (starts at 0)",
+      "last_bar_index": "Index of the last bar",
+      "barstate.isfirst": "true on first bar",
+      "barstate.islast": "true on last bar",
+      "barstate.isrealtime": "true on realtime bars",
+      "barstate.isnew": "true on first tick of new bar",
+      "barstate.isconfirmed": "true when bar is confirmed",
+      "barstate.islastconfirmedhistory": "true on last confirmed historical bar"
+    },
+    "symbol": {
+      "syminfo.ticker": "Symbol name (e.g., 'BTCUSD')",
+      "syminfo.tickerid": "Full symbol name with exchange prefix",
+      "syminfo.basecurrency": "Base currency (e.g., 'BTC')",
+      "syminfo.currency": "Quote currency (e.g., 'USD')",
+      "syminfo.description": "Symbol description",
+      "syminfo.type": "Type (stock, forex, crypto, etc.)",
+      "syminfo.timezone": "Symbol timezone",
+      "syminfo.session": "Session specification"
+    },
+    "timeframe": {
+      "timeframe.period": "Current timeframe as string",
+      "timeframe.isdaily": "true if daily timeframe",
+      "timeframe.isweekly": "true if weekly timeframe",
+      "timeframe.ismonthly": "true if monthly timeframe",
+      "timeframe.isintraday": "true if intraday timeframe",
+      "timeframe.isseconds": "true if seconds timeframe",
+      "timeframe.isminutes": "true if minutes timeframe"
+    }
+  },
+  
+  "operators": {
+    "arithmetic": {
+      "+": "Addition",
+      "-": "Subtraction",
+      "*": "Multiplication",
+      "/": "Division",
+      "%": "Modulo"
+    },
+    "comparison": {
+      "==": "Equal to",
+      "!=": "Not equal to",
+      ">": "Greater than",
+      "<": "Less than",
+      ">=": "Greater than or equal",
+      "<=": "Less than or equal"
+    },
+    "logical": {
+      "and": "Logical AND",
+      "or": "Logical OR",
+      "not": "Logical NOT"
+    },
+    "ternary": "condition ? valueIfTrue : valueIfFalse",
+    "assignment": {
+      "=": "Declaration and assignment",
+      ":=": "Reassignment"
+    }
+  },
+  
+  "control_structures": {
+    "if": {
+      "syntax": "if condition\n    // code\nelse if condition2\n    // code\nelse\n    // code",
+      "example": "if close > open\n    color = color.green\nelse\n    color = color.red"
+    },
+    "for": {
+      "syntax": "for i = start to end\n    // code",
+      "example": "sum = 0.0\nfor i = 0 to 9\n    sum := sum + close[i]"
+    },
+    "while": {
+      "syntax": "while condition\n    // code",
+      "example": "i = 0\nwhile i < 10\n    i := i + 1"
+    },
+    "ternary": {
+      "syntax": "result = condition ? valueIfTrue : valueIfFalse",
+      "example": "color = close > open ? color.green : color.red"
+    }
+  },
+  
+  "deprecated_v5": {
+    "study": {
+      "old": "study(title, ...)",
+      "new": "indicator(title, ...)",
+      "error_message": "'study' is deprecated",
+      "fix": "Replace study() with indicator()"
+    },
+    "security": {
+      "old": "security(symbol, timeframe, expression, ...)",
+      "new": "request.security(symbol, timeframe, expression, ...)",
+      "error_message": "'security' is deprecated",
+      "fix": "Replace security() with request.security()"
+    },
+    "input": {
+      "old": "input(defval, title, ...)",
+      "new": "input.int() / input.float() / input.bool() / etc.",
+      "error_message": "Old input syntax",
+      "fix": "Use input.TYPE() instead of input()"
+    }
+  },
+  
+  "common_errors": {
+    "undeclared_identifier": {
+      "pattern": "undeclared identifier|Cannot find|variable.*not found",
+      "description": "Variable utilisée avant déclaration",
+      "solution": "Déclarer la variable: myVar = 0",
+      "prevention": "Toujours déclarer les variables avant utilisation"
+    },
+    "mismatched_input": {
+      "pattern": "mismatched input|Syntax error|unexpected token",
+      "description": "Erreur de syntaxe",
+      "solution": "Vérifier parenthèses, virgules, syntaxe",
+      "common_causes": [
+        "Parenthèse non fermée",
+        "Virgule manquante",
+        "Point-virgule incorrect",
+        "Mot-clé mal orthographié"
+      ]
+    },
+    "unmatched_parentheses": {
+      "pattern": "expecting|closing parenthesis",
+      "description": "Parenthèses non équilibrées",
+      "solution": "Vérifier que chaque ( a son )",
+      "auto_fix": "Ajouter parenthèse fermante"
+    },
+    "deprecated_function": {
+      "pattern": "deprecated|no longer supported",
+      "description": "Fonction dépréciée utilisée",
+      "solution": "Utiliser la version v6",
+      "mapping": {
+        "study": "indicator",
+        "security": "request.security",
+        "input": "input.TYPE"
+      }
+    },
+    "type_mismatch": {
+      "pattern": "type mismatch|cannot convert|incompatible types",
+      "description": "Types incompatibles",
+      "solution": "Conversion explicite ou vérifier types",
+      "common_issues": [
+        "float vs int",
+        "series vs simple",
+        "bool vs numeric"
+      ]
+    },
+    "cannot_call_indicator_after_strategy": {
+      "pattern": "Cannot call 'indicator'|mixed indicator and strategy",
+      "description": "Mélange indicator() et strategy()",
+      "solution": "Utiliser SOIT indicator() SOIT strategy(), pas les deux",
+      "critical": true
+    }
+  },
+  
+  "best_practices": {
+    "naming": {
+      "variables": "Noms descriptifs en camelCase",
+      "constants": "UPPER_CASE pour constantes",
+      "functions": "Noms descriptifs",
+      "examples": {
+        "good": ["fastEMA", "slowEMA", "buySignal"],
+        "bad": ["a", "x", "temp"]
+      }
+    },
+    "comments": {
+      "single_line": "// Commentaire",
+      "documentation": "Commenter la logique complexe",
+      "sections": "Séparer en sections (INPUTS, CALCULATIONS, PLOTS)"
+    },
+    "structure": {
+      "order": [
+        "1. //@version=6",
+        "2. indicator() or strategy()",
+        "3. Inputs",
+        "4. Calculations",
+        "5. Logic",
+        "6. Plots"
+      ]
+    },
+    "performance": {
+      "avoid_loops": "Minimiser les boucles for/while",
+      "use_builtin": "Préférer fonctions built-in",
+      "limit_requests": "Limiter appels request.security()"
+    }
+  },
+  
+  "validation_rules": {
+    "required": {
+      "version_declaration": {
+        "rule": "File must start with //@version=6",
+        "check": "First non-empty line",
+        "critical": true
+      },
+      "script_type": {
+        "rule": "Must have indicator() OR strategy()",
+        "options": ["indicator", "strategy"],
+        "critical": true
+      }
+    },
+    "forbidden": {
+      "mixed_types": {
+        "rule": "Cannot mix indicator() and strategy()",
+        "error": "Choose one type only"
+      },
+      "deprecated_v5": {
+        "rule": "Do not use v5 deprecated functions",
+        "list": ["study", "security", "input (without type)"]
+      }
+    },
+    "syntax": {
+      "balanced_parentheses": {
+        "rule": "All ( must have matching )",
+        "check": "Count opening and closing"
+      },
+      "balanced_brackets": {
+        "rule": "All [ must have matching ]",
+        "check": "Count opening and closing"
+      },
+      "balanced_braces": {
+        "rule": "All { must have matching }",
+        "check": "Count opening and closing"
+      }
+    }
+  },
+  
+  "templates": {
+    "indicator_basic": "//@version=6\nindicator(\"{{name}}\", overlay=true)\n\n// === INPUTS ===\nlengthInput = input.int(14, \"Length\", minval=1)\nsourceInput = input.source(close, \"Source\")\n\n// === CALCULATIONS ===\nvalue = ta.sma(sourceInput, lengthInput)\n\n// === PLOTS ===\nplot(value, \"Value\", color=color.blue, linewidth=2)\n",
+    "strategy_basic": "//@version=6\nstrategy(\"{{name}}\", overlay=true)\n\n// === INPUTS ===\nfastLength = input.int(9, \"Fast Length\", minval=1)\nslowLength = input.int(21, \"Slow Length\", minval=1)\n\n// === CALCULATIONS ===\nfastMA = ta.ema(close, fastLength)\nslowMA = ta.ema(close, slowLength)\n\n// === LOGIC ===\nlongCondition = ta.crossover(fastMA, slowMA)\nshortCondition = ta.crossunder(fastMA, slowMA)\n\n// === TRADES ===\nif longCondition\n    strategy.entry(\"Long\", strategy.long)\n\nif shortCondition\n    strategy.close(\"Long\")\n\n// === PLOTS ===\nplot(fastMA, \"Fast MA\", color=color.blue)\nplot(slowMA, \"Slow MA\", color=color.red)\n"
+  },
+  
+  "testing_checklist": {
+    "before_commit": [
+      "Version v6 declared",
+      "No syntax errors",
+      "All parentheses closed",
+      "No deprecated functions",
+      "Variables declared before use",
+      "Consistent naming",
+      "Code commented",
+      "Local validation passes"
+    ],
+    "before_tradingview": [
+      "Local validation passed",
+      "Logic tested",
+      "Inputs validated",
+      "Colors defined",
+      "Plots configured"
+    ],
+    "production_ready": [
+      "TradingView compilation successful",
+      "Screenshots captured",
+      "Performance acceptable",
+      "No console errors",
+      "Documentation complete"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+# Node modules
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build outputs
+build/
+dist/
+
+# Environment variables (IMPORTANT: Contains secrets!)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Screenshots from TradingView tests
+screenshots/

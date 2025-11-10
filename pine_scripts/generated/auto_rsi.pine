@@ -1,0 +1,12 @@
+//@version=6
+indicator("Auto Generated RSI", overlay=false)
+
+// Input parameters
+lengthInput = input.int(14, "Length", minval=1)
+sourceInput = input.source(close, "Source")
+
+// Calculate indicator
+indicatorValue = ta.rsi(sourceInput, lengthInput)
+
+// Plot
+plot(indicatorValue, "Auto Generated RSI", color=color.purple, linewidth=2)

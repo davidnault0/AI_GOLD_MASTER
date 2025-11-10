@@ -1,0 +1,16 @@
+//@version=6
+indicator("Volume Weighted Average Price (VWAP)", overlay=true)
+
+// Calculate VWAP
+vwapValue = ta.vwap(close)
+
+// Plot VWAP
+plot(vwapValue, "VWAP", color=color.orange, linewidth=2)
+
+// Add standard deviation bands
+stdDev = ta.stdev(close, 20)
+upperBand = vwapValue + stdDev
+lowerBand = vwapValue - stdDev
+
+plot(upperBand, "Upper Band", color=color.red, linewidth=1, style=plot.style_circles)
+plot(lowerBand, "Lower Band", color=color.green, linewidth=1, style=plot.style_circles)
