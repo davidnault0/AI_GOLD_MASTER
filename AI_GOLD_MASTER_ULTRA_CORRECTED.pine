@@ -225,7 +225,7 @@ atr = ta.atr(14)
 
 // Daily Open
 var float dailyOpen = na
-if ta.change(time("D"))
+if ta.change(time("D")) != 0
     dailyOpen := open
 dailyTrend = close > dailyOpen ? "Bull" : "Bear"
 dailyColor = dailyTrend == "Bull" ? colorBull : colorBear
@@ -497,7 +497,7 @@ candleColor = showCandleColors and strongBullCondition ? color.white : showCandl
 barcolor(candleColor)
 
 // Setup Labels sur le graphique
-if showSetupLabels and longCondition and ta.change(longCondition)
+if showSetupLabels and longCondition and ta.change(longCondition) != 0
     labelText = "🚀 LONG\n" + 
                  "Entry: " + str.tostring(longEntryPrice, format.mintick) + "\n" +
                  "SL: " + str.tostring(longSL, format.mintick) + "\n" +
@@ -506,7 +506,7 @@ if showSetupLabels and longCondition and ta.change(longCondition)
                  "Lot: " + str.tostring(longLotSize, "#.##")
     label.new(bar_index, low, labelText, style=label.style_label_up, color=color.new(colorBull, 20), textcolor=color.white, size=size.normal)
 
-if showSetupLabels and shortCondition and ta.change(shortCondition)
+if showSetupLabels and shortCondition and ta.change(shortCondition) != 0
     labelText = "🔻 SHORT\n" + 
                  "Entry: " + str.tostring(shortEntryPrice, format.mintick) + "\n" +
                  "SL: " + str.tostring(shortSL, format.mintick) + "\n" +
@@ -664,8 +664,8 @@ var array<bool> fiboIsBullish = array.new_bool(0)
 var array<int> fiboStartBars = array.new_int(0)
 
 // Détection des pivots pour impulsions
-pivotHigh = ta.pivothigh(high, fiboPivotStrength, fiboPivotStrength)
-pivotLow = ta.pivotlow(low, fiboPivotStrength, fiboPivotStrength)
+float pivotHigh = ta.pivothigh(high, fiboPivotStrength, fiboPivotStrength)
+float pivotLow = ta.pivotlow(low, fiboPivotStrength, fiboPivotStrength)
 
 // Variables pour tracker derniers swings
 var float lastSwingHigh = na
@@ -747,19 +747,19 @@ if fiboShow
             startBar = array.get(fiboStartBars, i)
             
             // Vérifier si dans le range raisonnable
-            avgPrice = (startPrice + endPrice) / 2
+            float avgPrice = (startPrice + endPrice) / 2
             if math.abs(close - avgPrice) <= rangeThreshold
                 
                 // Calculer les niveaux Fibonacci
-                range = startPrice - endPrice
-                level_0 = startPrice
-                level_236 = isBull ? endPrice + range * 0.236 : startPrice - range * 0.236
-                level_382 = isBull ? endPrice + range * 0.382 : startPrice - range * 0.382
-                level_50 = isBull ? endPrice + range * 0.500 : startPrice - range * 0.500
-                level_618 = isBull ? endPrice + range * 0.618 : startPrice - range * 0.618
-                level_786 = isBull ? endPrice + range * 0.786 : startPrice - range * 0.786
-                level_886 = isBull ? endPrice + range * 0.886 : startPrice - range * 0.886
-                level_100 = endPrice
+                float fiboRange = math.abs(startPrice - endPrice)
+                float level_0 = startPrice
+                float level_236 = isBull ? endPrice + fiboRange * 0.236 : startPrice - fiboRange * 0.236
+                float level_382 = isBull ? endPrice + fiboRange * 0.382 : startPrice - fiboRange * 0.382
+                float level_50 = isBull ? endPrice + fiboRange * 0.500 : startPrice - fiboRange * 0.500
+                float level_618 = isBull ? endPrice + fiboRange * 0.618 : startPrice - fiboRange * 0.618
+                float level_786 = isBull ? endPrice + fiboRange * 0.786 : startPrice - fiboRange * 0.786
+                float level_886 = isBull ? endPrice + fiboRange * 0.886 : startPrice - fiboRange * 0.886
+                float level_100 = endPrice
                 
                 // Dessiner les niveaux clés uniquement
                 if fiboShowKeyZones
