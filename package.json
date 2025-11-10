@@ -15,8 +15,7 @@
     "test:auto-correct": "node auto_correcting_tester.js",
     "test:complete": "npm run test:multi-level && npm test"
   },
-  "dependencies": {},
   "optionalDependencies": {
-    "puppeteer": "^20.0.0"
+    "puppeteer": "^20.9.0"
   }
 }
