@@ -177,12 +177,28 @@ plot(doEnabled and doVisibility ? dailyOpen : na, "Daily Open", color=doColor, l
 volEnabled = true  // Toujours activé
 volConfluence = false  // Pas d'impact confluence
 
-// --- Calculs Volume ---
-volumeBuy = close > open ? volume : 0
-volumeSell = close < open ? volume : 0
-volumeTotal = volumeBuy + volumeSell
-volumeBuyPercent = volumeTotal > 0 ? (volumeBuy / volumeTotal) * 100 : 50
-volumeSellPercent = volumeTotal > 0 ? (volumeSell / volumeTotal) * 100 : 50
+// --- Calculs Volume Optimisés ---
+// Calcul de la force du mouvement (body/range ratio)
+bodySize = math.abs(close - open)
+rangeSize = high - low
+strength = rangeSize > 0 ? bodySize / rangeSize : 0.5
+
+// Volume directionnel pondéré par la force
+volumeBuyRaw = close > open ? volume * strength : 0
+volumeSellRaw = close < open ? volume * strength : 0
+
+// Lissage avec moyenne mobile 14 périodes (réduit bruit)
+volumeBuySmooth = ta.sma(volumeBuyRaw, 14)
+volumeSellSmooth = ta.sma(volumeSellRaw, 14)
+
+// Pourcentage final optimisé
+volumeTotal = volumeBuySmooth + volumeSellSmooth
+volumeBuyPercent = volumeTotal > 0 ? (volumeBuySmooth / volumeTotal) * 100 : 50
+volumeSellPercent = volumeTotal > 0 ? (volumeSellSmooth / volumeTotal) * 100 : 50
+
+// Delta volume pour analyse avancée
+volumeDelta = volumeBuySmooth - volumeSellSmooth
+volumeDominance = math.abs(volumeBuyPercent - volumeSellPercent)  // Force de la domination
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 🧠 MODULE: CONFLUENCE ENGINE
@@ -274,11 +290,12 @@ if dashEnabled and barstate.islast
     table.cell(dashboard, 1, 3, str.tostring(math.round(confluencePercent)) + "%", text_color=confluenceColor, text_size=size.normal, bgcolor=color.new(#000000, 0))
     table.cell(dashboard, 2, 3, str.tostring(confluenceScore) + "/" + str.tostring(confluenceMax), text_color=#808080, text_size=size.small, bgcolor=color.new(#000000, 0))
     
-    // Row 4: Volume
-    volColor = volumeBuyPercent > 60 ? #00FF00 : volumeSellPercent > 60 ? #FF0000 : #808080
+    // Row 4: Volume (Optimisé avec dominance)
+    volBuyColor = volumeBuyPercent >= 65 ? #00FF00 : volumeBuyPercent >= 55 ? color.new(#00FF00, 50) : #808080
+    volSellColor = volumeSellPercent >= 65 ? #FF0000 : volumeSellPercent >= 55 ? color.new(#FF0000, 50) : #808080
     table.cell(dashboard, 0, 4, "VOLUME", text_color=#808080, text_size=size.small, bgcolor=color.new(#000000, 0))
-    table.cell(dashboard, 1, 4, "B:" + str.tostring(math.round(volumeBuyPercent)) + "%", text_color=#00FF00, text_size=size.small, bgcolor=color.new(#000000, 0))
-    table.cell(dashboard, 2, 4, "S:" + str.tostring(math.round(volumeSellPercent)) + "%", text_color=#FF0000, text_size=size.small, bgcolor=color.new(#000000, 0))
+    table.cell(dashboard, 1, 4, "B:" + str.tostring(math.round(volumeBuyPercent)) + "%", text_color=volBuyColor, text_size=size.small, bgcolor=color.new(#000000, 0))
+    table.cell(dashboard, 2, 4, "S:" + str.tostring(math.round(volumeSellPercent)) + "%", text_color=volSellColor, text_size=size.small, bgcolor=color.new(#000000, 0))
     
     // Row 5: EMA Trend
     emaColor = emaTrend == "Bull" ? #00FF00 : emaTrend == "Bear" ? #FF0000 : #808080
