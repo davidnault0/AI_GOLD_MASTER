@@ -651,3 +651,329 @@ alertcondition(isBearishEngulfing, title="Bearish Engulfing", message="📉 Boug
 // ════════════════════════════════════════════════════════════════════════════════
 // 🎉 FIN DU CODE / END OF CODE
 // ════════════════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📈 FIBONACCI AUTO - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Arrays pour stocker les zones Fibonacci
+var array<float> fiboStarts = array.new_float(0)
+var array<float> fiboEnds = array.new_float(0)
+var array<bool> fiboIsValid = array.new_bool(0)
+var array<bool> fiboIsBullish = array.new_bool(0)
+var array<int> fiboStartBars = array.new_int(0)
+
+// Détection des pivots pour impulsions
+pivotHigh = ta.pivothigh(high, fiboPivotStrength, fiboPivotStrength)
+pivotLow = ta.pivotlow(low, fiboPivotStrength, fiboPivotStrength)
+
+// Variables pour tracker derniers swings
+var float lastSwingHigh = na
+var float lastSwingLow = na
+var int lastSwingHighBar = na
+var int lastSwingLowBar = na
+
+// Minimum swing size
+minimumSwingSize = atr * fiboMinSwingATR
+
+// Détecter nouveau swing high
+if not na(pivotHigh)
+    lastSwingHigh := pivotHigh
+    lastSwingHighBar := bar_index - fiboPivotStrength
+    
+    // Si on a un swing low précédent, créer zone Fibo HAUSSIÈRE
+    if not na(lastSwingLow)
+        swingSize = lastSwingHigh - lastSwingLow
+        if swingSize >= minimumSwingSize
+            // Ajouter nouvelle zone
+            array.push(fiboStarts, lastSwingLow)
+            array.push(fiboEnds, lastSwingHigh)
+            array.push(fiboIsValid, true)
+            array.push(fiboIsBullish, true)
+            array.push(fiboStartBars, lastSwingLowBar)
+
+// Détecter nouveau swing low
+if not na(pivotLow)
+    lastSwingLow := pivotLow
+    lastSwingLowBar := bar_index - fiboPivotStrength
+    
+    // Si on a un swing high précédent, créer zone Fibo BAISSIÈRE
+    if not na(lastSwingHigh)
+        swingSize = lastSwingHigh - lastSwingLow
+        if swingSize >= minimumSwingSize
+            // Ajouter nouvelle zone
+            array.push(fiboStarts, lastSwingHigh)
+            array.push(fiboEnds, lastSwingLow)
+            array.push(fiboIsValid, true)
+            array.push(fiboIsBullish, false)
+            array.push(fiboStartBars, lastSwingHighBar)
+
+// Limiter à 50 zones maximum
+while array.size(fiboStarts) > 50
+    array.shift(fiboStarts)
+    array.shift(fiboEnds)
+    array.shift(fiboIsValid)
+    array.shift(fiboIsBullish)
+    array.shift(fiboStartBars)
+
+// Vérifier invalidation des zones
+for i = 0 to array.size(fiboStarts) - 1
+    if array.get(fiboIsValid, i)
+        startPrice = array.get(fiboStarts, i)
+        endPrice = array.get(fiboEnds, i)
+        isBull = array.get(fiboIsBullish, i)
+        
+        // Zone haussière: invalidée si prix clôture sous le swing low
+        if isBull and close < endPrice
+            array.set(fiboIsValid, i, false)
+        
+        // Zone baissière: invalidée si prix clôture au-dessus swing high
+        if not isBull and close > startPrice
+            array.set(fiboIsValid, i, false)
+
+// Variable pour tracker si sur zone Fibo (pour triangles jaunes)
+var bool onFiboKeyZone = false
+onFiboKeyZone := false
+
+// Affichage des zones Fibonacci
+rangeThreshold = close * (fiboRangePercent / 100)
+
+if fiboShow
+    for i = 0 to array.size(fiboStarts) - 1
+        if array.get(fiboIsValid, i)
+            startPrice = array.get(fiboStarts, i)
+            endPrice = array.get(fiboEnds, i)
+            isBull = array.get(fiboIsBullish, i)
+            startBar = array.get(fiboStartBars, i)
+            
+            // Vérifier si dans le range raisonnable
+            avgPrice = (startPrice + endPrice) / 2
+            if math.abs(close - avgPrice) <= rangeThreshold
+                
+                // Calculer les niveaux Fibonacci
+                range = startPrice - endPrice
+                level_0 = startPrice
+                level_236 = isBull ? endPrice + range * 0.236 : startPrice - range * 0.236
+                level_382 = isBull ? endPrice + range * 0.382 : startPrice - range * 0.382
+                level_50 = isBull ? endPrice + range * 0.500 : startPrice - range * 0.500
+                level_618 = isBull ? endPrice + range * 0.618 : startPrice - range * 0.618
+                level_786 = isBull ? endPrice + range * 0.786 : startPrice - range * 0.786
+                level_886 = isBull ? endPrice + range * 0.886 : startPrice - range * 0.886
+                level_100 = endPrice
+                
+                // Dessiner les niveaux clés uniquement
+                if fiboShowKeyZones
+                    // Ligne 50%
+                    line.new(startBar, level_50, bar_index + 10, level_50, 
+                             color=color.new(color.yellow, 70), width=1, style=line.style_dashed, extend=extend.right)
+                    
+                    // Ligne 61.8%
+                    line.new(startBar, level_618, bar_index + 10, level_618, 
+                             color=color.new(color.orange, 70), width=1, style=line.style_dashed, extend=extend.right)
+                    
+                    // Ligne 78.6%
+                    line.new(startBar, level_786, bar_index + 10, level_786, 
+                             color=color.new(color.red, 70), width=1, style=line.style_dashed, extend=extend.right)
+                    
+                    // Zone 50%-61.8% (Golden Pocket)
+                    box.new(startBar, level_50, bar_index + 10, level_618,
+                            border_color=color.new(color.yellow, 80),
+                            bgcolor=color.new(color.yellow, 95))
+                    
+                    // Zone 78.6%-88.6%
+                    box.new(startBar, level_786, bar_index + 10, level_886,
+                            border_color=color.new(color.red, 80),
+                            bgcolor=color.new(color.red, 95))
+                
+                // Vérifier si close est sur une zone clé (pour triangles jaunes)
+                tolerance = close * 0.003
+                if (math.abs(close - level_50) <= tolerance or
+                    math.abs(close - level_618) <= tolerance or
+                    math.abs(close - level_786) <= tolerance or
+                    math.abs(close - level_886) <= tolerance)
+                    onFiboKeyZone := true
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🧱 ORDER BLOCKS HTF - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Request engulfing patterns from HTF
+[m30BullEng, m30BearEng, m30Open1] = request.security(syminfo.tickerid, "30", [
+    close > open and close[1] < open[1] and close > open[1] and open < close[1],
+    close < open and close[1] > open[1] and close < open[1] and open > close[1],
+    open[1]
+], lookahead=barmerge.lookahead_off)
+
+[h1BullEng, h1BearEng, h1Open1] = request.security(syminfo.tickerid, "60", [
+    close > open and close[1] < open[1] and close > open[1] and open < close[1],
+    close < open and close[1] > open[1] and close < open[1] and open > close[1],
+    open[1]
+], lookahead=barmerge.lookahead_off)
+
+[h4BullEng, h4BearEng, h4Open1] = request.security(syminfo.tickerid, "240", [
+    close > open and close[1] < open[1] and close > open[1] and open < close[1],
+    close < open and close[1] > open[1] and close < open[1] and open > close[1],
+    open[1]
+], lookahead=barmerge.lookahead_off)
+
+[d1BullEng, d1BearEng, d1Open1] = request.security(syminfo.tickerid, "D", [
+    close > open and close[1] < open[1] and close > open[1] and open < close[1],
+    close < open and close[1] > open[1] and close < open[1] and open > close[1],
+    open[1]
+], lookahead=barmerge.lookahead_off)
+
+// Arrays pour Order Blocks
+var array<float> obPrices = array.new_float(0)
+var array<string> obTimeframes = array.new_string(0)
+var array<bool> obIsBullish = array.new_bool(0)
+var array<int> obBars = array.new_int(0)
+var array<bool> obIsValid = array.new_bool(0)
+
+// Détecter nouveau Order Block M30
+if obShowM30 and (m30BullEng or m30BearEng)
+    array.push(obPrices, m30Open1)
+    array.push(obTimeframes, "M30")
+    array.push(obIsBullish, m30BullEng)
+    array.push(obBars, bar_index)
+    array.push(obIsValid, true)
+
+// Détecter nouveau Order Block H1
+if obShowH1 and (h1BullEng or h1BearEng)
+    array.push(obPrices, h1Open1)
+    array.push(obTimeframes, "H1")
+    array.push(obIsBullish, h1BullEng)
+    array.push(obBars, bar_index)
+    array.push(obIsValid, true)
+
+// Détecter nouveau Order Block H4
+if obShowH4 and (h4BullEng or h4BearEng)
+    array.push(obPrices, h4Open1)
+    array.push(obTimeframes, "H4")
+    array.push(obIsBullish, h4BullEng)
+    array.push(obBars, bar_index)
+    array.push(obIsValid, true)
+
+// Détecter nouveau Order Block D1
+if obShowD1 and (d1BullEng or d1BearEng)
+    array.push(obPrices, d1Open1)
+    array.push(obTimeframes, "D1")
+    array.push(obIsBullish, d1BullEng)
+    array.push(obBars, bar_index)
+    array.push(obIsValid, true)
+
+// Limiter à obMaxZones
+while array.size(obPrices) > obMaxZones
+    array.shift(obPrices)
+    array.shift(obTimeframes)
+    array.shift(obIsBullish)
+    array.shift(obBars)
+    array.shift(obIsValid)
+
+// Vérifier invalidation OB (prix traverse et confirme)
+for i = 0 to array.size(obPrices) - 1
+    if array.get(obIsValid, i)
+        obPrice = array.get(obPrices, i)
+        obBull = array.get(obIsBullish, i)
+        
+        // OB bullish invalidé si prix clôture en-dessous
+        if obBull and close < obPrice
+            array.set(obIsValid, i, false)
+        
+        // OB bearish invalidé si prix clôture au-dessus
+        if not obBull and close > obPrice
+            array.set(obIsValid, i, false)
+
+// Variable pour tracker si sur OB (pour triangles orange)
+var bool onOrderBlock = false
+onOrderBlock := false
+
+// Afficher Order Blocks
+if obShow
+    for i = 0 to array.size(obPrices) - 1
+        if array.get(obIsValid, i)
+            obPrice = array.get(obPrices, i)
+            obTF = array.get(obTimeframes, i)
+            obBull = array.get(obIsBullish, i)
+            obBar = array.get(obBars, i)
+            
+            // Vérifier range raisonnable
+            if math.abs(close - obPrice) <= close * 0.10
+                // Ligne OB
+                obColor = obBull ? colorBull : colorBear
+                line.new(obBar, obPrice, bar_index + 20, obPrice,
+                         color=color.new(obColor, 50), width=2, style=line.style_solid, extend=extend.right)
+                
+                // Label avec TF
+                label.new(bar_index, obPrice, obTF, 
+                          style=obBull ? label.style_label_up : label.style_label_down,
+                          color=color.new(obColor, 30), textcolor=color.white, size=size.tiny)
+                
+                // Vérifier si close est sur cet OB (pour triangles orange)
+                tolerance = close * 0.005
+                if math.abs(close - obPrice) <= tolerance
+                    onOrderBlock := true
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📅 PDH/PDL/IB + WEEKLY OHLC - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Request previous day/week data
+[pdh, pdl, pwd, pwd] = request.security(syminfo.tickerid, "D", [high[1], low[1], open, close[1]], lookahead=barmerge.lookahead_on)
+[pwh, pwl, pwo] = request.security(syminfo.tickerid, "W", [high[1], low[1], open], lookahead=barmerge.lookahead_on)
+[pmo] = request.security(syminfo.tickerid, "M", [open], lookahead=barmerge.lookahead_on)
+
+// Affichage PDH/PDL/Weekly
+if pdhShow
+    lineStyle = pdhLineStyle == "solid" ? line.style_solid : pdhLineStyle == "dashed" ? line.style_dashed : line.style_dotted
+    
+    // Previous Day High
+    if showPDH and not na(pdh)
+        line.new(bar_index[10], pdh, bar_index + 20, pdh,
+                 color=color.new(colorBear, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pdh, "PDH", style=label.style_label_left, 
+                  color=color.new(colorBear, 70), textcolor=color.white, size=size.tiny)
+    
+    // Previous Day Low
+    if showPDL and not na(pdl)
+        line.new(bar_index[10], pdl, bar_index + 20, pdl,
+                 color=color.new(colorBull, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pdl, "PDL", style=label.style_label_left,
+                  color=color.new(colorBull, 70), textcolor=color.white, size=size.tiny)
+    
+    // Previous Week High
+    if showPWH and not na(pwh)
+        line.new(bar_index[10], pwh, bar_index + 20, pwh,
+                 color=color.new(color.purple, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pwh, "PWH", style=label.style_label_left,
+                  color=color.new(color.purple, 70), textcolor=color.white, size=size.tiny)
+    
+    // Previous Week Low
+    if showPWL and not na(pwl)
+        line.new(bar_index[10], pwl, bar_index + 20, pwl,
+                 color=color.new(color.purple, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pwl, "PWL", style=label.style_label_left,
+                  color=color.new(color.purple, 70), textcolor=color.white, size=size.tiny)
+    
+    // Daily Open
+    if showDOpen and not na(pwd)
+        line.new(bar_index[10], pwd, bar_index + 20, pwd,
+                 color=color.new(color.blue, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pwd, "D", style=label.style_label_left,
+                  color=color.new(color.blue, 70), textcolor=color.white, size=size.tiny)
+    
+    // Weekly Open
+    if showWOpen and not na(pwo)
+        line.new(bar_index[10], pwo, bar_index + 20, pwo,
+                 color=color.new(color.navy, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pwo, "W", style=label.style_label_left,
+                  color=color.new(color.navy, 70), textcolor=color.white, size=size.tiny)
+    
+    // Monthly Open
+    if showMOpen and not na(pmo)
+        line.new(bar_index[10], pmo, bar_index + 20, pmo,
+                 color=color.new(color.maroon, 50), width=pdhLineWidth, style=lineStyle, extend=extend.right)
+        label.new(bar_index, pmo, "M", style=label.style_label_left,
+                  color=color.new(color.maroon, 70), textcolor=color.white, size=size.tiny)
+
