@@ -977,3 +977,513 @@ if pdhShow
         label.new(bar_index, pmo, "M", style=label.style_label_left,
                   color=color.new(color.maroon, 70), textcolor=color.white, size=size.tiny)
 
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 💠 RSI DIVERGENCE MTF - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Fonction pour détecter divergences
+detectDivergence(src, osc, lookback, isRegular) =>
+    // Trouver pivots prix et RSI
+    pricePivotHigh = ta.pivothigh(src, 5, 5)
+    pricePivotLow = ta.pivotlow(src, 5, 5)
+    oscPivotHigh = ta.pivothigh(osc, 5, 5)
+    oscPivotLow = ta.pivotlow(osc, 5, 5)
+    
+    bullDiv = false
+    bearDiv = false
+    
+    // Recherche dans historique
+    if not na(pricePivotLow) and not na(oscPivotLow)
+        // Trouver pivot précédent
+        for i = 1 to lookback
+            if not na(pricePivotLow[i]) and not na(oscPivotLow[i])
+                if isRegular
+                    // Regular Bullish: Prix fait lower low, RSI fait higher low
+                    if pricePivotLow < pricePivotLow[i] and oscPivotLow > oscPivotLow[i]
+                        bullDiv := true
+                        break
+                else
+                    // Hidden Bullish: Prix fait higher low, RSI fait lower low
+                    if pricePivotLow > pricePivotLow[i] and oscPivotLow < oscPivotLow[i]
+                        bullDiv := true
+                        break
+    
+    if not na(pricePivotHigh) and not na(oscPivotHigh)
+        for i = 1 to lookback
+            if not na(pricePivotHigh[i]) and not na(oscPivotHigh[i])
+                if isRegular
+                    // Regular Bearish: Prix fait higher high, RSI fait lower high
+                    if pricePivotHigh > pricePivotHigh[i] and oscPivotHigh < oscPivotHigh[i]
+                        bearDiv := true
+                        break
+                else
+                    // Hidden Bearish: Prix fait lower high, RSI fait higher high
+                    if pricePivotHigh < pricePivotHigh[i] and oscPivotHigh > oscPivotHigh[i]
+                        bearDiv := true
+                        break
+    
+    [bullDiv, bearDiv]
+
+// RSI actuel TF
+rsiCurrent = ta.rsi(close, rsiLength)
+
+// Divergences Regular
+[regBullDiv, regBearDiv] = detectDivergence(close, rsiCurrent, rsiDivLookback, true)
+
+// Divergences Hidden
+[hidBullDiv, hidBearDiv] = detectDivergence(close, rsiCurrent, rsiDivLookback, false)
+
+// MTF RSI et divergences
+[rsi15, rsi15Close] = request.security(syminfo.tickerid, rsiDivTF1, [ta.rsi(close, rsiLength), close], lookahead=barmerge.lookahead_off)
+[rsi30, rsi30Close] = request.security(syminfo.tickerid, rsiDivTF2, [ta.rsi(close, rsiLength), close], lookahead=barmerge.lookahead_off)
+[rsi60, rsi60Close] = request.security(syminfo.tickerid, rsiDivTF3, [ta.rsi(close, rsiLength), close], lookahead=barmerge.lookahead_off)
+
+[regBull15, regBear15] = detectDivergence(rsi15Close, rsi15, rsiDivLookback, true)
+[regBull30, regBear30] = detectDivergence(rsi30Close, rsi30, rsiDivLookback, true)
+[regBull60, regBear60] = detectDivergence(rsi60Close, rsi60, rsiDivLookback, true)
+
+[hidBull15, hidBear15] = detectDivergence(rsi15Close, rsi15, rsiDivLookback, false)
+[hidBull30, hidBear30] = detectDivergence(rsi30Close, rsi30, rsiDivLookback, false)
+[hidBull60, hidBear60] = detectDivergence(rsi60Close, rsi60, rsiDivLookback, false)
+
+// Affichage divergences
+if rsiDivShow
+    // Regular divergences
+    if rsiShowRegular
+        if regBullDiv
+            label.new(bar_index, low, "div-CTF", style=label.style_label_up,
+                      color=color.new(colorBull, 0), textcolor=color.white, size=size.tiny)
+        if regBearDiv
+            label.new(bar_index, high, "div-CTF", style=label.style_label_down,
+                      color=color.new(colorBear, 0), textcolor=color.white, size=size.tiny)
+        
+        if regBull15
+            label.new(bar_index, low, "div-15m", style=label.style_label_up,
+                      color=color.new(colorBull, 30), textcolor=color.white, size=size.tiny)
+        if regBear15
+            label.new(bar_index, high, "div-15m", style=label.style_label_down,
+                      color=color.new(colorBear, 30), textcolor=color.white, size=size.tiny)
+    
+    // Hidden divergences
+    if rsiShowHidden
+        if hidBullDiv
+            label.new(bar_index, low, "Hdiv-CTF", style=label.style_label_up,
+                      color=color.new(colorBull, 50), textcolor=color.white, size=size.tiny)
+        if hidBearDiv
+            label.new(bar_index, high, "Hdiv-CTF", style=label.style_label_down,
+                      color=color.new(colorBear, 50), textcolor=color.white, size=size.tiny)
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📐 SMC/MSS/BOS - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Pivots pour structure SMC
+smcPivotH = ta.pivothigh(high, smcPivotLength, smcPivotLength)
+smcPivotL = ta.pivotlow(low, smcPivotLength, smcPivotLength)
+
+// Variables pour tracker structure
+var float lastHigher = na
+var float lastLower = na
+var bool currentTrend = true  // true = bullish, false = bearish
+
+// Market Structure Shift (MSS) detection
+mssDetected = false
+mssLabel = ""
+
+// Break of Structure (BOS) detection  
+bosDetected = false
+bosLabel = ""
+
+// Change of Character (CHoCH) detection
+chochDetected = false
+
+if not na(smcPivotH)
+    if na(lastHigher) or smcPivotH > lastHigher
+        // New higher high
+        lastHigher := smcPivotH
+        if currentTrend
+            bosDetected := true
+            bosLabel := "BOS"
+        else
+            // Trend change from bear to bull
+            chochDetected := true
+            mssDetected := true
+            mssLabel := "MSS"
+            currentTrend := true
+    else if smcPivotH < lastHigher
+        // Lower high - possible trend change
+        if currentTrend
+            chochDetected := true
+
+if not na(smcPivotL)
+    if na(lastLower) or smcPivotL < lastLower
+        // New lower low
+        lastLower := smcPivotL
+        if not currentTrend
+            bosDetected := true
+            bosLabel := "BOS"
+        else
+            // Trend change from bull to bear
+            chochDetected := true
+            mssDetected := true
+            mssLabel := "MSS"
+            currentTrend := false
+    else if smcPivotL > lastLower
+        // Higher low - possible trend change
+        if not currentTrend
+            chochDetected := true
+
+// Affichage SMC
+if smcShow
+    if smcShowMSS and mssDetected
+        label.new(bar_index[smcPivotLength], high[smcPivotLength], mssLabel,
+                  style=label.style_label_down, color=color.new(color.orange, 0),
+                  textcolor=color.white, size=size.normal)
+    
+    if smcShowBOS and bosDetected
+        label.new(bar_index[smcPivotLength], currentTrend ? low[smcPivotLength] : high[smcPivotLength], bosLabel,
+                  style=currentTrend ? label.style_label_up : label.style_label_down,
+                  color=color.new(currentTrend ? colorBull : colorBear, 0),
+                  textcolor=color.white, size=size.small)
+    
+    if smcShowCHoCH and chochDetected
+        label.new(bar_index[smcPivotLength], high[smcPivotLength], "CHoCH",
+                  style=label.style_label_down, color=color.new(color.yellow, 0),
+                  textcolor=color.black, size=size.small)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📈 TREND LINES AUTO - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Pivots pour trend lines
+trendPivotH = ta.pivothigh(high, trendLinePivotLength, trendLinePivotLength)
+trendPivotL = ta.pivotlow(low, trendLinePivotLength, trendLinePivotLength)
+
+// Arrays pour stocker points de trendlines
+var array<float> trendHighPrices = array.new_float(0)
+var array<int> trendHighBars = array.new_int(0)
+var array<float> trendLowPrices = array.new_float(0)
+var array<int> trendLowBars = array.new_int(0)
+
+// Ajouter nouveaux pivots
+if not na(trendPivotH)
+    array.push(trendHighPrices, trendPivotH)
+    array.push(trendHighBars, bar_index - trendLinePivotLength)
+    if array.size(trendHighPrices) > 5
+        array.shift(trendHighPrices)
+        array.shift(trendHighBars)
+
+if not na(trendPivotL)
+    array.push(trendLowPrices, trendPivotL)
+    array.push(trendLowBars, bar_index - trendLinePivotLength)
+    if array.size(trendLowPrices) > 5
+        array.shift(trendLowPrices)
+        array.shift(trendLowBars)
+
+// Dessiner trendlines
+if trendLineShow and barstate.islast
+    // Resistance trendline (connect highs)
+    if array.size(trendHighPrices) >= 2
+        size = array.size(trendHighPrices)
+        price1 = array.get(trendHighPrices, size - 2)
+        bar1 = array.get(trendHighBars, size - 2)
+        price2 = array.get(trendHighPrices, size - 1)
+        bar2 = array.get(trendHighBars, size - 1)
+        
+        // Calculer pente et extension
+        slope = (price2 - price1) / (bar2 - bar1)
+        extendedPrice = price2 + (slope * trendLineExtend)
+        
+        line.new(bar1, price1, bar2 + trendLineExtend, extendedPrice,
+                 color=color.new(colorBear, 30), width=trendLineWidth, 
+                 style=line.style_solid, extend=extend.none)
+    
+    // Support trendline (connect lows)
+    if array.size(trendLowPrices) >= 2
+        size = array.size(trendLowPrices)
+        price1 = array.get(trendLowPrices, size - 2)
+        bar1 = array.get(trendLowBars, size - 2)
+        price2 = array.get(trendLowPrices, size - 1)
+        bar2 = array.get(trendLowBars, size - 1)
+        
+        // Calculer pente et extension
+        slope = (price2 - price1) / (bar2 - bar1)
+        extendedPrice = price2 + (slope * trendLineExtend)
+        
+        line.new(bar1, price1, bar2 + trendLineExtend, extendedPrice,
+                 color=color.new(colorBull, 30), width=trendLineWidth,
+                 style=line.style_solid, extend=extend.none)
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 💎 FVG AMÉLIORÉ - IMPLÉMENTATION ICT COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Time session filtering
+inAMSession = fvgSessionFilter ? time(timeframe.period, fvgAMSession) : true
+inPMSession = fvgSessionFilter ? time(timeframe.period, fvgPMSession) : true
+inTargetSession = inAMSession or inPMSession
+
+// FVG Detection amélioré
+bullishFVG = low > high[2] and (not fvgSessionFilter or inTargetSession)
+bearishFVG = high < low[2] and (not fvgSessionFilter or inTargetSession)
+
+// Calcul taille FVG
+fvgSizeBull = bullishFVG ? ((low - high[2]) / close) * 100 : 0
+fvgSizeBear = bearishFVG ? ((low[2] - high) / close) * 100 : 0
+
+// Filtrage ATR
+validBullFVG = bullishFVG and fvgSizeBull >= fvgMinSize and (low - high[2]) >= atr * 0.5
+validBearFVG = bearishFVG and fvgSizeBear >= fvgMinSize and (low[2] - high) >= atr * 0.5
+
+// Arrays pour tracker FVG et iFVG
+var array<float> fvgTopPrices = array.new_float(0)
+var array<float> fvgBotPrices = array.new_float(0)
+var array<bool> fvgIsBull = array.new_bool(0)
+var array<int> fvgBars = array.new_int(0)
+var array<bool> fvgMitigated = array.new_bool(0)
+
+// Ajouter nouveaux FVG
+if validBullFVG
+    array.push(fvgTopPrices, low)
+    array.push(fvgBotPrices, high[2])
+    array.push(fvgIsBull, true)
+    array.push(fvgBars, bar_index - 2)
+    array.push(fvgMitigated, false)
+
+if validBearFVG
+    array.push(fvgTopPrices, low[2])
+    array.push(fvgBotPrices, high)
+    array.push(fvgIsBull, false)
+    array.push(fvgBars, bar_index - 2)
+    array.push(fvgMitigated, false)
+
+// Limiter nombre de FVG
+while array.size(fvgTopPrices) > 30
+    array.shift(fvgTopPrices)
+    array.shift(fvgBotPrices)
+    array.shift(fvgIsBull)
+    array.shift(fvgBars)
+    array.shift(fvgMitigated)
+
+// Détection mitigation et retest (iFVG)
+for i = 0 to array.size(fvgTopPrices) - 1
+    if not array.get(fvgMitigated, i)
+        topPrice = array.get(fvgTopPrices, i)
+        botPrice = array.get(fvgBotPrices, i)
+        isBull = array.get(fvgIsBull, i)
+        
+        // Check mitigation
+        mitigated = false
+        if fvgRetestMode == "Close"
+            mitigated := (isBull and close < botPrice) or (not isBull and close > topPrice)
+        else  // Wick mode
+            mitigated := (isBull and low < botPrice) or (not isBull and high > topPrice)
+        
+        if mitigated
+            array.set(fvgMitigated, i, true)
+
+// Affichage FVG
+if fvgShow
+    for i = 0 to array.size(fvgTopPrices) - 1
+        topPrice = array.get(fvgTopPrices, i)
+        botPrice = array.get(fvgBotPrices, i)
+        isBull = array.get(fvgIsBull, i)
+        fvgBar = array.get(fvgBars, i)
+        mitigated = array.get(fvgMitigated, i)
+        
+        // FVG non-mitigé ou iFVG si showiFVG
+        if not mitigated or fvgShowiFVG
+            fvgColor = mitigated ? color.purple : (isBull ? colorBull : colorBear)
+            box.new(fvgBar, topPrice, bar_index + 5, botPrice,
+                    border_color=color.new(fvgColor, 70),
+                    bgcolor=color.new(fvgColor, mitigated ? 95 : 90))
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🚩 FLAGS & BREAKOUTS - IMPLÉMENTATION COMPLÈTE
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Détection d'impulsion (mouvement fort)
+priceChange = close - close[flagConsolidationBars]
+impulseSize = math.abs(priceChange)
+isStrongImpulse = impulseSize >= atr * flagMinImpulse
+
+// Variables pour tracker flags
+var float flagHighPrice = na
+var float flagLowPrice = na
+var int flagStartBar = na
+var bool inFlag = false
+var bool impulseWasBullish = na
+
+// Détecter début de flag (après impulsion)
+if isStrongImpulse and not inFlag
+    inFlag := true
+    impulseWasBullish := priceChange > 0
+    flagHighPrice := high
+    flagLowPrice := low
+    flagStartBar := bar_index
+
+// Tracker consolidation dans flag
+if inFlag
+    flagHighPrice := math.max(flagHighPrice, high)
+    flagLowPrice := math.min(flagLowPrice, low)
+    
+    // Breakout detection
+    flagRange = flagHighPrice - flagLowPrice
+    
+    if impulseWasBullish
+        // Flag bullish: attendre breakout haussier
+        if close > flagHighPrice
+            if flagShow and flagShowFlag
+                // Dessiner le flag
+                box.new(flagStartBar, flagHighPrice, bar_index, flagLowPrice,
+                        border_color=color.new(colorBull, 50),
+                        bgcolor=color.new(colorBull, 90))
+                label.new(bar_index, flagHighPrice, "FLAG ▲",
+                          style=label.style_label_down, color=colorBull,
+                          textcolor=color.white, size=size.small)
+            inFlag := false
+        else if close < flagLowPrice
+            // Invalidation
+            inFlag := false
+    else
+        // Flag bearish: attendre breakout baissier
+        if close < flagLowPrice
+            if flagShow and flagShowFlag
+                // Dessiner le flag
+                box.new(flagStartBar, flagHighPrice, bar_index, flagLowPrice,
+                        border_color=color.new(colorBear, 50),
+                        bgcolor=color.new(colorBear, 90))
+                label.new(bar_index, flagLowPrice, "FLAG ▼",
+                          style=label.style_label_up, color=colorBear,
+                          textcolor=color.white, size=size.small)
+            inFlag := false
+        else if close > flagHighPrice
+            // Invalidation
+            inFlag := false
+
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎨 TRIANGLES SPÉCIAUX & PRIX ENTRÉE OPTIMAUX
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Déterminer couleur triangle selon contexte
+triangleColorBull = color.green
+triangleColorBear = color.red
+
+// Si englobante sur Order Block HTF → Triangle ORANGE
+if (isBullishEngulfing or isBearishEngulfing) and onOrderBlock
+    triangleColorBull := color.orange
+    triangleColorBear := color.orange
+
+// Si englobante sur zone Fibo clé → Triangle JAUNE
+if (isBullishEngulfing or isBearishEngulfing) and onFiboKeyZone
+    triangleColorBull := color.yellow
+    triangleColorBear := color.yellow
+
+// Afficher triangles engulfing avec couleurs spéciales
+plotshape(engulfingShow and isBullishEngulfing, "Bull Engulfing Special", 
+          shape.triangleup, location.belowbar, triangleColorBull, size=size.small)
+plotshape(engulfingShow and isBearishEngulfing, "Bear Engulfing Special",
+          shape.triangledown, location.abovebar, triangleColorBear, size=size.small)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎯 CALCUL PRIX ENTRÉE OPTIMAUX
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Prix d'entrée optimal considérant multiple facteurs
+optimalLongEntry = close
+optimalShortEntry = close
+
+// Ajuster selon proximité zones importantes
+proximityAdjustment = atr * 0.2
+
+// Si proche d'un Order Block, ajuster entrée
+if onOrderBlock
+    // Chercher OB le plus proche
+    for i = 0 to array.size(obPrices) - 1
+        if array.get(obIsValid, i)
+            obPrice = array.get(obPrices, i)
+            obBull = array.get(obIsBullish, i)
+            if math.abs(close - obPrice) <= atr * 0.5
+                if obBull and close > obPrice
+                    optimalLongEntry := math.max(optimalLongEntry, obPrice + proximityAdjustment)
+                if not obBull and close < obPrice
+                    optimalShortEntry := math.min(optimalShortEntry, obPrice - proximityAdjustment)
+
+// Si proche d'une zone Fibo, ajuster entrée
+if onFiboKeyZone
+    for i = 0 to array.size(fiboStarts) - 1
+        if array.get(fiboIsValid, i)
+            startPrice = array.get(fiboStarts, i)
+            endPrice = array.get(fiboEnds, i)
+            isBull = array.get(fiboIsBullish, i)
+            range = math.abs(startPrice - endPrice)
+            
+            // Calculer Golden Pocket (50-61.8%)
+            level_50 = isBull ? endPrice + range * 0.500 : startPrice - range * 0.500
+            level_618 = isBull ? endPrice + range * 0.618 : startPrice - range * 0.618
+            
+            if math.abs(close - level_618) <= atr * 0.3
+                if isBull
+                    optimalLongEntry := level_618 + proximityAdjustment
+                else
+                    optimalShortEntry := level_618 - proximityAdjustment
+
+// Recalculer SL/TP avec prix optimaux
+optLongSL = optimalLongEntry - (atr * atrMultiplierSL)
+optLongTP1 = optimalLongEntry + (atr * atrMultiplierTP1)
+optLongTP2 = optimalLongEntry + (atr * atrMultiplierTP2)
+optLongTP3 = optimalLongEntry + (atr * atrMultiplierTP3)
+
+optShortSL = optimalShortEntry + (atr * atrMultiplierSL)
+optShortTP1 = optimalShortEntry - (atr * atrMultiplierTP1)
+optShortTP2 = optimalShortEntry - (atr * atrMultiplierTP2)
+optShortTP3 = optimalShortEntry - (atr * atrMultiplierTP3)
+
+// Recalculer RR et Lot avec prix optimaux
+optLongRiskPoints = optimalLongEntry - optLongSL
+optLongRewardPoints = optLongTP1 - optimalLongEntry
+optLongRR = optLongRiskPoints > 0 ? optLongRewardPoints / optLongRiskPoints : 0
+optLongLotSize = optLongRiskPoints > 0 ? riskAmount / optLongRiskPoints : 0
+
+optShortRiskPoints = optShortSL - optimalShortEntry
+optShortRewardPoints = optimalShortEntry - optShortTP1
+optShortRR = optShortRiskPoints > 0 ? optShortRewardPoints / optShortRiskPoints : 0
+optShortLotSize = optShortRiskPoints > 0 ? riskAmount / optShortRiskPoints : 0
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 📊 SETUP LABELS AMÉLIORÉS (avec TP2/TP3)
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Setup Labels améliorés sur le graphique
+if showSetupLabels and longCondition and ta.change(longCondition)
+    labelText = "🚀 LONG SETUP\n" + 
+                 "Entry: " + str.tostring(optimalLongEntry, format.mintick) + "\n" +
+                 "SL: " + str.tostring(optLongSL, format.mintick) + "\n" +
+                 "TP1: " + str.tostring(optLongTP1, format.mintick) + "\n" +
+                 "TP2: " + str.tostring(optLongTP2, format.mintick) + "\n" +
+                 "TP3: " + str.tostring(optLongTP3, format.mintick) + "\n" +
+                 "RR: " + str.tostring(optLongRR, "#.##") + "\n" +
+                 "Lot: " + str.tostring(optLongLotSize, "#.##")
+    label.new(bar_index, low, labelText, style=label.style_label_up, 
+              color=color.new(colorBull, 10), textcolor=color.white, size=size.normal)
+
+if showSetupLabels and shortCondition and ta.change(shortCondition)
+    labelText = "🔻 SHORT SETUP\n" + 
+                 "Entry: " + str.tostring(optimalShortEntry, format.mintick) + "\n" +
+                 "SL: " + str.tostring(optShortSL, format.mintick) + "\n" +
+                 "TP1: " + str.tostring(optShortTP1, format.mintick) + "\n" +
+                 "TP2: " + str.tostring(optShortTP2, format.mintick) + "\n" +
+                 "TP3: " + str.tostring(optShortTP3, format.mintick) + "\n" +
+                 "RR: " + str.tostring(optShortRR, "#.##") + "\n" +
+                 "Lot: " + str.tostring(optShortLotSize, "#.##")
+    label.new(bar_index, high, labelText, style=label.style_label_down,
+              color=color.new(colorBear, 10), textcolor=color.white, size=size.normal)
+
+// ════════════════════════════════════════════════════════════════════════════════
+// 🎉 FIN DES NOUVEAUX MODULES
+// ════════════════════════════════════════════════════════════════════════════════
+
