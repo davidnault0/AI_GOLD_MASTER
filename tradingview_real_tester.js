@@ -23,13 +23,18 @@ class TradingViewTester {
         console.log('🚀 Launching browser...');
         
         this.browser = await puppeteer.launch({
-            headless: process.env.TRADINGVIEW_HEADLESS !== 'false',
+            headless: 'new', // Force headless mode (new API)
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--disable-extensions',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process',
                 '--window-size=1920,1080'
             ],
             defaultViewport: {
