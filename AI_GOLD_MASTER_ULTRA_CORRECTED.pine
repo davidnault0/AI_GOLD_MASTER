@@ -776,14 +776,14 @@ if fiboShow
                              color=color.new(color.red, 70), width=1, style=line.style_dashed, extend=extend.right)
                     
                     // Zone 50%-61.8% (Golden Pocket)
-                    box.new(startBar, level_50, bar_index + 10, level_618,
-                            border_color=color.new(color.yellow, 80),
-                            bgcolor=color.new(color.yellow, 95))
+                    box.new(startBar, level_50, bar_index + 10, level_618, 
+                             border_color=color.new(color.yellow, 80), 
+                             bgcolor=color.new(color.yellow, 95))
                     
                     // Zone 78.6%-88.6%
-                    box.new(startBar, level_786, bar_index + 10, level_886,
-                            border_color=color.new(color.red, 80),
-                            bgcolor=color.new(color.red, 95))
+                    box.new(startBar, level_786, bar_index + 10, level_886, 
+                             border_color=color.new(color.red, 80), 
+                             bgcolor=color.new(color.red, 95))
                 
                 // Vérifier si close est sur une zone clé (pour triangles jaunes)
                 tolerance = close * 0.003
