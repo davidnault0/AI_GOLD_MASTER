@@ -10,6 +10,7 @@ You will find various scripts demonstrating different functionalities, structure
 - **Automated Validation**: Validate Pine Script syntax without external dependencies.
 - **Code Generation**: Automatically generate Pine Script indicators programmatically.
 - **Comprehensive Testing**: Test all Pine Script files with a single command.
+- **🌐 TradingView Integration**: Test your scripts directly on TradingView with real compilation!
 
 ## 🚀 Getting Started
 
@@ -25,7 +26,7 @@ npm install  # Optional: only needed for TradingView integration
 The repository includes a standalone validator that doesn't require any external dependencies:
 
 ```bash
-# Run all tests
+# Run all tests (local validation)
 npm test
 
 # Validate a specific file
@@ -36,6 +37,9 @@ npm run validate
 
 # Generate new indicators automatically
 npm run generate
+
+# 🌐 NEW: Test on TradingView (requires credentials)
+npm run test:tradingview
 ```
 
 ## 📁 Project Structure
@@ -133,6 +137,7 @@ This generates and validates indicators automatically. You can modify `pine_gene
 5. **EMA Crossover Strategy** - Trading strategy based on EMA crossovers
 6. **VWAP** - Volume Weighted Average Price
 7. **ATR** - Average True Range volatility indicator
+8. **Stochastic RSI** - Stochastic RSI momentum oscillator
 
 All examples use Pine Script v6 syntax and best practices.
 
@@ -144,19 +149,21 @@ All examples use Pine Script v6 syntax and best practices.
 # Create your indicator
 nano pine_scripts/examples/my_indicator.pine
 
-# Validate it
+# Validate it locally (instant)
 node pine_validator.js pine_scripts/examples/my_indicator.pine
 
-# If validation passes, copy to TradingView
+# Test on TradingView (real compilation)
+npm run test:tradingview
 ```
 
 ### Batch Testing
 
 ```bash
-# Test all examples
+# Test all examples locally
 npm test
 
-# Check the output for any errors
+# Test all examples on TradingView
+npm run test:tradingview
 ```
 
 ### Generate Multiple Indicators
@@ -166,6 +173,46 @@ Edit `pine_generator.js` to add more indicator configurations, then run:
 ```bash
 npm run generate
 ```
+
+## 🌐 TradingView Integration
+
+### Setup (One-Time)
+
+1. Copy the example configuration:
+```bash
+cp .env.example .env
+```
+
+2. Edit `.env` with your TradingView credentials:
+```bash
+nano .env
+```
+
+3. Add your credentials:
+```env
+TRADINGVIEW_EMAIL=your-email@example.com
+TRADINGVIEW_PASSWORD=your-password
+```
+
+### Test on TradingView
+
+```bash
+# Test all scripts on TradingView
+npm run test:tradingview
+
+# Test a single script
+npm run test:tradingview:single
+```
+
+This will:
+- ✅ Connect to TradingView with your credentials
+- ✅ Compile each script in the Pine Editor
+- ✅ Capture screenshots of the results
+- ✅ Report compilation success/failures
+
+📸 Screenshots are saved in `./screenshots/`
+
+For more details, see [TRADINGVIEW_TESTING.md](TRADINGVIEW_TESTING.md)
 
 ## 🔍 Validation Output
 
@@ -197,10 +244,13 @@ Warnings: 0
 
 | Command | Description |
 |---------|-------------|
-| `npm test` | Run all Pine Script validation tests |
+| `npm test` | Run all Pine Script validation tests (local, fast) |
 | `npm run validate` | Validate all example scripts |
 | `npm run generate` | Generate new indicators automatically |
-| `npm run test:puppeteer` | Run TradingView integration tests (requires setup) |
+| `npm run test:puppeteer` | Run hybrid validation (local + Puppeteer fallback) |
+| `npm run test:tradingview` | 🌐 **NEW:** Test all scripts on TradingView |
+| `npm run test:tradingview:single` | 🌐 **NEW:** Test a single script on TradingView |
+| `npm run test:full` | Run both local and Puppeteer tests |
 
 ## 🌟 Pine Script v6 Features
 

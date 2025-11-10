@@ -9,9 +9,10 @@ npm-debug.log*
 build/
 dist/
 
-# Environment variables
+# Environment variables (IMPORTANT: Contains secrets!)
 .env
 .env.local
+.env.*.local
 
 # IDE
 .vscode/
@@ -26,3 +27,6 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Screenshots from TradingView tests
+screenshots/

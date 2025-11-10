@@ -8,7 +8,9 @@
     "validate": "node pine_validator.js pine_scripts/examples/",
     "generate": "node pine_generator.js",
     "test:puppeteer": "node pine_puppeteer_test.js",
-    "test:full": "npm test && npm run test:puppeteer"
+    "test:full": "npm test && npm run test:puppeteer",
+    "test:tradingview": "node test_on_tradingview.js",
+    "test:tradingview:single": "node tradingview_real_tester.js"
   },
   "dependencies": {},
   "optionalDependencies": {
