@@ -7,9 +7,11 @@
     "test": "node pine_test_runner.js",
     "validate": "node pine_validator.js pine_scripts/examples/",
     "generate": "node pine_generator.js",
-    "test:puppeteer": "node compile_pine_script.js"
+    "test:puppeteer": "node pine_puppeteer_test.js",
+    "test:full": "npm test && npm run test:puppeteer"
   },
-  "dependencies": {
+  "dependencies": {},
+  "optionalDependencies": {
     "puppeteer": "^20.0.0"
   }
 }
