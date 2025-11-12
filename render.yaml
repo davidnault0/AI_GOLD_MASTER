@@ -24,6 +24,8 @@ services:
         sync: false
       - key: MARKET_API_KEY
         sync: false
+      - key: TWELVE_DATA_API_KEY
+        sync: false
       - key: WEBHOOK_URL
         sync: false
       - key: TELEGRAM_BOT_TOKEN

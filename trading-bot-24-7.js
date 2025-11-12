@@ -48,10 +48,15 @@ class TradingBot247 {
         console.log('\n🚀 Démarrage du Trading Bot 24/7...\n');
 
         // 1. Initialiser le connecteur de données
+        // Utiliser TWELVE_DATA_API_KEY en priorité si c'est twelvedata, sinon MARKET_API_KEY
+        const apiKey = this.config.dataProvider === 'twelvedata' 
+            ? (process.env.TWELVE_DATA_API_KEY || process.env.MARKET_API_KEY)
+            : process.env.MARKET_API_KEY;
+            
         this.dataConnector = new MarketDataConnector({
             provider: this.config.dataProvider,
             symbol: this.config.symbol,
-            apiKey: process.env.MARKET_API_KEY
+            apiKey: apiKey
         });
 
         // 2. Tester la connexion aux données de marché

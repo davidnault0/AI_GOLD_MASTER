@@ -30,6 +30,8 @@ class MarketDataConnector {
                 return await this.fetchAlphaVantageData();
             case 'polygon':
                 return await this.fetchPolygonData();
+            case 'twelvedata':
+                return await this.fetchTwelveDataData();
             default:
                 throw new Error(`Provider non supporté: ${this.provider}`);
         }
@@ -158,6 +160,61 @@ class MarketDataConnector {
             };
         } catch (error) {
             console.error('❌ Erreur Polygon:', error.message);
+            return this.getFallbackData();
+        }
+    }
+
+    /**
+     * Obtenir les données de Twelve Data (Or, Actions, Crypto, Forex)
+     */
+    async fetchTwelveDataData() {
+        if (!this.apiKey) {
+            console.warn('⚠️  Clé API Twelve Data manquante');
+            return this.getFallbackData();
+        }
+
+        // Twelve Data utilise un format différent pour les symboles
+        // XAUUSD pour l'or, BTC/USD pour Bitcoin, AAPL pour Apple, etc.
+        const url = `https://api.twelvedata.com/price?symbol=${this.symbol}&apikey=${this.apiKey}`;
+        
+        try {
+            const data = await this.makeHttpRequest(url);
+            
+            if (!data || !data.price) {
+                throw new Error('Données Twelve Data invalides');
+            }
+            
+            const price = parseFloat(data.price);
+            
+            // Récupérer également les statistiques de la journée
+            const quoteUrl = `https://api.twelvedata.com/quote?symbol=${this.symbol}&apikey=${this.apiKey}`;
+            let quoteData = null;
+            
+            try {
+                quoteData = await this.makeHttpRequest(quoteUrl);
+            } catch (err) {
+                console.warn('⚠️  Impossible de récupérer les stats complètes');
+            }
+            
+            const marketData = {
+                symbol: this.symbol,
+                price: price,
+                timestamp: Date.now(),
+                volume: quoteData ? parseFloat(quoteData.volume || 0) : 0,
+                bid: price * 0.9999,
+                ask: price * 1.0001,
+                high24h: quoteData ? parseFloat(quoteData.high || price * 1.01) : price * 1.01,
+                low24h: quoteData ? parseFloat(quoteData.low || price * 0.99) : price * 0.99,
+                change24h: quoteData ? parseFloat(quoteData.percent_change || 0) : 0,
+                open: quoteData ? parseFloat(quoteData.open || price) : price
+            };
+            
+            // Mettre en cache
+            this.cache.lastData = marketData;
+            
+            return marketData;
+        } catch (error) {
+            console.error('❌ Erreur Twelve Data:', error.message);
             return this.getFallbackData();
         }
     }
