@@ -1,0 +1,37 @@
+services:
+  # Gold Analysis AI Bot Service
+  - type: web
+    name: gold-analysis-ai
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      # Telegram Configuration (Set these in Render dashboard)
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      
+      # Optional: Market Data API Keys
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false
+      - key: POLYGON_API_KEY
+        sync: false
+      - key: FINNHUB_API_KEY
+        sync: false
+      
+      # Analysis Configuration
+      - key: ANALYSIS_INTERVAL_SECONDS
+        value: 300
+      - key: CONFIDENCE_THRESHOLD
+        value: 0.7
+      
+      # Server Configuration (Render provides PORT automatically)
+      - key: HOST
+        value: 0.0.0.0
+    
+    healthCheckPath: /health
+    
+    autoDeploy: true
