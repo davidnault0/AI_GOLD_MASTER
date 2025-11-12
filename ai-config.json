@@ -1,0 +1,105 @@
+{
+  "aiModels": {
+    "default": "gpt-4o",
+    "available": {
+      "gpt-4o": {
+        "provider": "openai",
+        "apiEndpoint": "https://api.openai.com/v1",
+        "model": "gpt-4o",
+        "description": "GPT-4 Optimized - High performance, multimodal capabilities",
+        "features": {
+          "multimodal": true,
+          "codeGeneration": "excellent",
+          "contextWindow": 128000,
+          "costPerMillionTokens": {
+            "input": 2.50,
+            "output": 10.00
+          }
+        },
+        "useCases": [
+          "complex-reasoning",
+          "code-generation",
+          "multimodal-tasks",
+          "documentation"
+        ]
+      },
+      "qwen-3": {
+        "provider": "alibaba",
+        "apiEndpoint": "http://localhost:8000/v1",
+        "model": "qwen-3",
+        "description": "Qwen 3 - Open source, local deployment, privacy-focused",
+        "features": {
+          "multimodal": false,
+          "codeGeneration": "good",
+          "contextWindow": 32768,
+          "localDeployment": true,
+          "hardwareRequirements": {
+            "minGPU": "RTX 3090",
+            "minVRAM": "24GB",
+            "recommendedVRAM": "48GB"
+          }
+        },
+        "useCases": [
+          "high-volume-processing",
+          "privacy-sensitive",
+          "low-latency-required",
+          "cost-optimization"
+        ]
+      }
+    }
+  },
+  "taskRouting": {
+    "description": "Hybrid approach: route tasks to optimal model",
+    "rules": [
+      {
+        "taskType": "pine-script-generation",
+        "preferredModel": "gpt-4o",
+        "reason": "Better training on TradingView-specific code"
+      },
+      {
+        "taskType": "log-analysis",
+        "preferredModel": "qwen-3",
+        "reason": "Repetitive task, can run locally for speed"
+      },
+      {
+        "taskType": "documentation",
+        "preferredModel": "gpt-4o",
+        "reason": "Superior context understanding"
+      },
+      {
+        "taskType": "batch-processing",
+        "preferredModel": "qwen-3",
+        "reason": "Cost effective for high volume"
+      }
+    ]
+  },
+  "networkConfiguration": {
+    "gpt-4o": {
+      "requiresInternet": true,
+      "timeout": 30000,
+      "retryAttempts": 3,
+      "rateLimitPerMinute": 60
+    },
+    "qwen-3": {
+      "requiresInternet": false,
+      "localEndpoint": "http://localhost:8000",
+      "timeout": 5000,
+      "concurrent": true
+    }
+  },
+  "recommendations": {
+    "startWith": "gpt-4o",
+    "reason": "Easier integration, no infrastructure setup",
+    "considerQwen3If": [
+      "High usage volume (>1M tokens/month)",
+      "Strict data privacy requirements",
+      "Available GPU infrastructure",
+      "Technical expertise for deployment"
+    ],
+    "hybridApproach": {
+      "enabled": false,
+      "description": "Route simple/repetitive tasks to Qwen 3, complex tasks to GPT-4o",
+      "estimatedCostSavings": "40-60%"
+    }
+  }
+}
