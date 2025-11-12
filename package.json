@@ -1,12 +1,24 @@
 {
   "name": "ai_gold_master",
   "version": "1.0.0",
-  "description": "Automated testing for Pine Script using Puppeteer.",
-  "main": "compile_pine_script.js",
+  "description": "Intelligence Artificielle pour l'analyse de l'or en temps réel avec génération de signaux de trading.",
+  "main": "index.js",
   "scripts": {
-    "test": "node compile_pine_script.js"
+    "start": "node index.js",
+    "test": "node compile_pine_script.js",
+    "analyze": "node index.js"
   },
+  "keywords": [
+    "trading",
+    "gold",
+    "xauusd",
+    "technical-analysis",
+    "ai",
+    "signals",
+    "real-time"
+  ],
   "dependencies": {
+    "axios": "^1.13.2",
     "puppeteer": "^20.0.0"
   }
 }
