@@ -1,15 +1,157 @@
 
-# AI_GOLD_MASTER
+# 🤖 AI_GOLD_MASTER - Bot de Trading IA 24/7
 
-This repository includes the creation and integration of TradingView indicators in Pine Script v6. 
-You will find various scripts demonstrating different functionalities, structure, and logic necessary for building effective trading indicators using Pine Script.
+Bot de trading automatisé avec intelligence artificielle pour analyse de marché en temps réel et génération de signaux d'achat/vente précis.
 
-## Features
-- **Custom Indicator Development**: Learn how to create custom indicators tailored to specific trading strategies.
-- **Pine Script v6 Syntax**: Get familiar with the new features and updates in Pine Script v6.
-- **Integration with TradingView**: Understand how to integrate your scripts with TradingView for real-time data and analysis.
+## 🌟 Fonctionnalités Principales
 
-## Getting Started
+### 🚀 Trading Bot 24/7
+- ✅ **Analyse continue** - Mise à jour chaque seconde
+- ✅ **Signaux automatiques** - BUY/SELL/HOLD avec niveau de confiance
+- ✅ **IA avancée** - GPT-4o ou Qwen 3 pour des décisions intelligentes
+- ✅ **Multi-marchés** - Crypto (Binance, Coinbase) et Actions (Alpha Vantage, Polygon)
+- ✅ **Notifications en temps réel** - Telegram, Webhook, Dashboard web
+- ✅ **Déploiement cloud** - Fonctionne 24/7 sur Render
+
+### 📊 Indicateurs Techniques
+- RSI (Relative Strength Index)
+- MACD (Moving Average Convergence Divergence)
+- Moving Averages (SMA 50/200)
+- Analyse de volume
+- Momentum
+- Analyse IA contextuelle
+
+### 🔔 Notifications
+- 📱 Telegram bot
+- 🌐 Webhooks
+- 📊 Dashboard web temps réel
+- 📝 Logs détaillés
+
+## 🏃 Démarrage Rapide
+
+### Déploiement sur Render (Recommandé - 24/7)
+
+**Le plus simple pour avoir un bot actif 24/7!**
+
+1. **Fork ce repository** sur votre compte GitHub
+
+2. **Créer un compte sur Render** (gratuit): [https://render.com](https://render.com)
+
+3. **Déployer en un clic**:
+   - Connectez votre GitHub à Render
+   - Sélectionnez ce repository
+   - Render détecte automatiquement `render.yaml`
+   - Ajoutez votre clé `OPENAI_API_KEY`
+   - Cliquez sur "Create Web Service"
+
+4. **C'est tout!** Votre bot est en ligne 24/7 🎉
+
+👉 **Guide complet**: [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md)
+
+### Utilisation Locale (Test)
+
+```bash
+# 1. Cloner le repository
+git clone https://github.com/davidnault0/AI_GOLD_MASTER.git
+cd AI_GOLD_MASTER
+
+# 2. Installer les dépendances
+npm install
+
+# 3. Configurer les variables d'environnement
+cp .env.example .env
+# Éditer .env et ajouter votre OPENAI_API_KEY
+
+# 4. Démarrer le bot
+npm start
+```
+
+Accédez au dashboard: `http://localhost:3000/dashboard`
+
+## 📖 Documentation Complète
+
+### Guides Principaux
+- 🚀 **[RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md)** - Déploiement 24/7 sur Render
+- 📊 **[AI_MODEL_COMPARISON.md](./AI_MODEL_COMPARISON.md)** - Comparaison GPT-4o vs Qwen 3
+- 🐧 **[QWEN3_DEPLOYMENT.md](./QWEN3_DEPLOYMENT.md)** - Déploiement Qwen 3 local
+- ⚡ **[QUICKSTART.md](./QUICKSTART.md)** - Guide de démarrage rapide
+
+### Fichiers Principaux
+- `trading-bot-24-7.js` - Bot principal 24/7
+- `real-time-market-analyzer.js` - Analyseur de marché en temps réel
+- `market-data-connector.js` - Connexion aux APIs de marché
+- `ai-integration.js` - Gestionnaire IA (GPT-4o/Qwen 3)
+
+## 🔧 Configuration
+
+### Variables d'Environnement Essentielles
+
+```env
+# IA
+AI_MODEL=gpt-4o                    # ou qwen-3
+OPENAI_API_KEY=sk-...              # Clé OpenAI
+
+# Trading
+TRADING_SYMBOL=BTCUSDT             # Symbole à trader
+DATA_PROVIDER=binance              # binance, coinbase, alphavantage
+UPDATE_INTERVAL=1000               # Fréquence d'analyse (ms)
+
+# Notifications (optionnel)
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHAT_ID=...
+WEBHOOK_URL=...
+```
+
+Voir [.env.example](./.env.example) pour la configuration complète.
+
+## 🎯 Choix du Modèle IA
+
+### GPT-4o (Recommandé pour débuter)
+- ✅ Qualité supérieure
+- ✅ Facile à configurer
+- ✅ Déploiement immédiat
+- 💰 ~$5-20/mois
+
+### Qwen 3 (Pour volume élevé)
+- ✅ Gratuit après setup
+- ✅ Confidentialité totale
+- ✅ Latence minimale
+- ⚙️ Nécessite GPU local
+
+👉 **Comparaison détaillée**: [AI_MODEL_COMPARISON.md](./AI_MODEL_COMPARISON.md)
+
+## 📊 Dashboard Web
+
+Une fois déployé, accédez à:
+
+- `/` ou `/health` - Health check
+- `/dashboard` - Dashboard visuel avec statistiques
+- `/stats` - Statistiques JSON
+- `/signals` - Derniers signaux JSON
+
+## 🔔 Exemples de Signaux
+
+```
+============================================================
+🔔 SIGNAL DE TRADING - BUY
+============================================================
+💰 Prix: $50,125.50
+📊 Confiance: 85.2%
+📝 Raisons:
+   - BUY: RSI survendu (poids: 2)
+   - BUY: MACD haussier (poids: 1.5)
+   - BUY: Croix dorée (MA) (poids: 1)
+============================================================
+```
+
+## 🎓 Fonctionnalités Pine Script (Original)
+
+Ce repository inclut également:
+- **Custom Indicator Development** - Indicateurs Pine Script personnalisés
+- **Pine Script v6 Syntax** - Exemples et tutoriels
+- **TradingView Integration** - Scripts d'automatisation TradingView
+
+## Getting Started (Pine Script)
 1. Clone the repository: `git clone https://github.com/davidnault0/AI_GOLD_MASTER.git`
 2. Open the scripts in TradingView and start customizing your indicators!
 
@@ -49,5 +191,67 @@ ai.switchModel('qwen-3');
 
 For network efficiency recommendations, refer to the comparison document.
 
-## Contribution
-Feel free to contribute by submitting pull requests with your indicators or scripts!
+## 💰 Coûts
+
+### Render (Hébergement)
+- **Starter (Gratuit)**: 750h/mois, idéal pour tester
+- **Standard ($7/mois)**: 24/7 sans interruption, recommandé
+
+### OpenAI API (IA)
+- **GPT-4o**: ~$2.50-10 par million de tokens
+- **Estimation mensuelle**: $5-20/mois selon l'utilisation
+
+### Données de Marché
+- **Binance**: GRATUIT (API publique)
+- **Coinbase**: GRATUIT (API publique)
+- **Alpha Vantage**: GRATUIT (5 calls/min) ou $50/mois (premium)
+
+## 🛡️ Sécurité
+
+⚠️ **IMPORTANT**: Ce bot est à des fins éducatives et de démonstration.
+
+- ✅ Ne jamais committer vos clés API
+- ✅ Utiliser des variables d'environnement
+- ✅ Tester avec de petits montants
+- ⚠️ Faire vos propres recherches (DYOR)
+- ⚠️ Le trading comporte des risques
+
+## 🐛 Dépannage
+
+### Le bot ne démarre pas
+- Vérifier que `OPENAI_API_KEY` est définie
+- Vérifier les logs sur Render
+- Vérifier la configuration dans `.env`
+
+### Pas de signaux
+- Attendre 1-2 minutes pour données historiques
+- Le marché peut être calme (normal)
+- Vérifier que les données sont reçues dans les logs
+
+### Erreurs de connexion
+- Binance: Devrait toujours fonctionner (API publique)
+- Vérifier votre connexion internet
+- Voir [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) section dépannage
+
+## 📚 Ressources
+
+- [Documentation Render](https://render.com/docs)
+- [API Binance](https://binance-docs.github.io/apidocs/)
+- [OpenAI API](https://platform.openai.com/docs)
+- [Telegram Bot API](https://core.telegram.org/bots/api)
+
+## 🤝 Contribution
+
+Feel free to contribute by submitting pull requests with your indicators, strategies, or improvements!
+
+## 📝 License
+
+MIT License - Voir LICENSE pour plus de détails
+
+## ⭐ Support
+
+Si ce projet vous aide, donnez-lui une ⭐ sur GitHub!
+
+---
+
+**Made with ❤️ and 🤖 AI**

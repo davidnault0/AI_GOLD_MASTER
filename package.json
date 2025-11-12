@@ -1,12 +1,31 @@
 {
   "name": "ai_gold_master",
-  "version": "1.0.0",
-  "description": "Automated testing for Pine Script using Puppeteer.",
-  "main": "compile_pine_script.js",
+  "version": "2.0.0",
+  "description": "AI-powered trading bot with real-time market analysis (24/7 on Render)",
+  "main": "trading-bot-24-7.js",
   "scripts": {
-    "test": "node compile_pine_script.js"
+    "start": "node trading-bot-24-7.js",
+    "test": "node compile_pine_script.js",
+    "dev": "node trading-bot-24-7.js",
+    "analyzer": "node real-time-market-analyzer.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   },
   "dependencies": {
     "puppeteer": "^20.0.0"
-  }
+  },
+  "keywords": [
+    "trading",
+    "ai",
+    "bot",
+    "crypto",
+    "stocks",
+    "gpt-4o",
+    "qwen",
+    "real-time",
+    "market-analysis"
+  ],
+  "author": "davidnault0",
+  "license": "MIT"
 }

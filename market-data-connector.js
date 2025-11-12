@@ -1,0 +1,260 @@
+/**
+ * Connecteur de Données de Marché en Temps Réel
+ * Support pour plusieurs fournisseurs: Binance, Coinbase, Alpha Vantage, etc.
+ */
+
+const https = require('https');
+const http = require('http');
+
+class MarketDataConnector {
+    constructor(config = {}) {
+        this.provider = config.provider || 'binance';
+        this.apiKey = config.apiKey || process.env.MARKET_API_KEY;
+        this.symbol = config.symbol || 'BTCUSDT';
+        this.cache = {};
+        this.websocket = null;
+        
+        console.log(`📡 Connecteur de marché initialisé: ${this.provider}`);
+    }
+
+    /**
+     * Obtenir les données de marché en temps réel
+     */
+    async fetchRealTimeData() {
+        switch (this.provider) {
+            case 'binance':
+                return await this.fetchBinanceData();
+            case 'coinbase':
+                return await this.fetchCoinbaseData();
+            case 'alphavantage':
+                return await this.fetchAlphaVantageData();
+            case 'polygon':
+                return await this.fetchPolygonData();
+            default:
+                throw new Error(`Provider non supporté: ${this.provider}`);
+        }
+    }
+
+    /**
+     * Obtenir les données de Binance (Crypto)
+     */
+    async fetchBinanceData() {
+        const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${this.symbol}`;
+        
+        try {
+            const data = await this.makeHttpRequest(url);
+            
+            // Vérifier si les données sont valides
+            if (!data || !data.lastPrice) {
+                throw new Error('Données Binance invalides');
+            }
+            
+            const marketData = {
+                symbol: data.symbol || this.symbol,
+                price: parseFloat(data.lastPrice),
+                timestamp: Date.now(),
+                volume: parseFloat(data.volume || 0),
+                bid: parseFloat(data.bidPrice || data.lastPrice),
+                ask: parseFloat(data.askPrice || data.lastPrice),
+                high24h: parseFloat(data.highPrice || data.lastPrice),
+                low24h: parseFloat(data.lowPrice || data.lastPrice),
+                change24h: parseFloat(data.priceChangePercent || 0),
+                trades24h: parseInt(data.count || 0)
+            };
+            
+            // Mettre en cache
+            this.cache.lastData = marketData;
+            
+            return marketData;
+        } catch (error) {
+            console.error('❌ Erreur Binance:', error.message);
+            return this.getFallbackData();
+        }
+    }
+
+    /**
+     * Obtenir les données de Coinbase (Crypto)
+     */
+    async fetchCoinbaseData() {
+        const productId = this.symbol.replace('USDT', '-USD');
+        const url = `https://api.coinbase.com/v2/prices/${productId}/spot`;
+        
+        try {
+            const data = await this.makeHttpRequest(url);
+            
+            return {
+                symbol: productId,
+                price: parseFloat(data.data.amount),
+                timestamp: Date.now(),
+                volume: 0, // Nécessite un appel supplémentaire
+                bid: parseFloat(data.data.amount) * 0.999,
+                ask: parseFloat(data.data.amount) * 1.001,
+                high24h: 0,
+                low24h: 0,
+                change24h: 0
+            };
+        } catch (error) {
+            console.error('❌ Erreur Coinbase:', error.message);
+            return this.getFallbackData();
+        }
+    }
+
+    /**
+     * Obtenir les données d'Alpha Vantage (Actions, Forex)
+     */
+    async fetchAlphaVantageData() {
+        if (!this.apiKey) {
+            console.warn('⚠️  Clé API Alpha Vantage manquante');
+            return this.getFallbackData();
+        }
+
+        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${this.symbol}&apikey=${this.apiKey}`;
+        
+        try {
+            const data = await this.makeHttpRequest(url);
+            const quote = data['Global Quote'];
+            
+            return {
+                symbol: quote['01. symbol'],
+                price: parseFloat(quote['05. price']),
+                timestamp: Date.now(),
+                volume: parseFloat(quote['06. volume']),
+                bid: parseFloat(quote['05. price']) * 0.999,
+                ask: parseFloat(quote['05. price']) * 1.001,
+                high24h: parseFloat(quote['03. high']),
+                low24h: parseFloat(quote['04. low']),
+                change24h: parseFloat(quote['10. change percent'].replace('%', ''))
+            };
+        } catch (error) {
+            console.error('❌ Erreur Alpha Vantage:', error.message);
+            return this.getFallbackData();
+        }
+    }
+
+    /**
+     * Obtenir les données de Polygon.io (Actions, Crypto)
+     */
+    async fetchPolygonData() {
+        if (!this.apiKey) {
+            console.warn('⚠️  Clé API Polygon manquante');
+            return this.getFallbackData();
+        }
+
+        const url = `https://api.polygon.io/v2/last/trade/${this.symbol}?apiKey=${this.apiKey}`;
+        
+        try {
+            const data = await this.makeHttpRequest(url);
+            
+            return {
+                symbol: this.symbol,
+                price: data.results.p,
+                timestamp: data.results.t,
+                volume: data.results.s,
+                bid: data.results.p * 0.999,
+                ask: data.results.p * 1.001,
+                high24h: 0,
+                low24h: 0,
+                change24h: 0
+            };
+        } catch (error) {
+            console.error('❌ Erreur Polygon:', error.message);
+            return this.getFallbackData();
+        }
+    }
+
+    /**
+     * Faire une requête HTTP
+     */
+    makeHttpRequest(url) {
+        return new Promise((resolve, reject) => {
+            const isHttps = url.startsWith('https');
+            const lib = isHttps ? https : http;
+            
+            lib.get(url, (res) => {
+                let data = '';
+                
+                res.on('data', (chunk) => {
+                    data += chunk;
+                });
+                
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (error) {
+                        reject(new Error('Erreur de parsing JSON'));
+                    }
+                });
+            }).on('error', (error) => {
+                reject(error);
+            });
+        });
+    }
+
+    /**
+     * Données de secours en cas d'erreur
+     */
+    getFallbackData() {
+        console.log('⚠️  Utilisation des données de secours');
+        
+        // Utiliser les dernières données en cache si disponibles
+        if (this.cache.lastData && Date.now() - this.cache.lastData.timestamp < 60000) {
+            return this.cache.lastData;
+        }
+        
+        // Sinon, générer des données simulées
+        const basePrice = 50000;
+        const price = basePrice + (Math.random() - 0.5) * 100;
+        
+        return {
+            symbol: this.symbol,
+            price: price,
+            timestamp: Date.now(),
+            volume: 1000 + Math.random() * 500,
+            bid: price - 0.5,
+            ask: price + 0.5,
+            high24h: price * 1.02,
+            low24h: price * 0.98,
+            change24h: (Math.random() - 0.5) * 5,
+            isFallback: true
+        };
+    }
+
+    /**
+     * Connecter via WebSocket pour les mises à jour en temps réel
+     * (Optionnel mais recommandé pour de meilleures performances)
+     */
+    connectWebSocket() {
+        console.log('🔌 WebSocket non implémenté dans cette version');
+        console.log('💡 Utilisation du polling HTTP pour les données en temps réel');
+        // À implémenter avec ws ou socket.io pour de meilleures performances
+    }
+
+    /**
+     * Obtenir les données historiques
+     */
+    async fetchHistoricalData(interval = '1h', limit = 100) {
+        if (this.provider === 'binance') {
+            const url = `https://api.binance.com/api/v3/klines?symbol=${this.symbol}&interval=${interval}&limit=${limit}`;
+            
+            try {
+                const data = await this.makeHttpRequest(url);
+                
+                return data.map(candle => ({
+                    timestamp: candle[0],
+                    open: parseFloat(candle[1]),
+                    high: parseFloat(candle[2]),
+                    low: parseFloat(candle[3]),
+                    close: parseFloat(candle[4]),
+                    volume: parseFloat(candle[5])
+                }));
+            } catch (error) {
+                console.error('❌ Erreur historique Binance:', error.message);
+                return [];
+            }
+        }
+        
+        return [];
+    }
+}
+
+module.exports = MarketDataConnector;
