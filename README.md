@@ -33,8 +33,13 @@ Bot de trading automatisé avec intelligence artificielle pour analyse de march�
 
 **Vous n'êtes pas très doué avec la programmation? Pas de problème!**
 
-👉 **[GUIDE_DEBUTANT.md](./GUIDE_DEBUTANT.md)** - Guide complet pour débutants (explications simples)  
-👉 **[OBTENIR_OPENAI_API_KEY.md](./OBTENIR_OPENAI_API_KEY.md)** - Comment obtenir votre clé API OpenAI
+#### 📋 Si vous avez TOUTES vos clés API (OpenAI, Telegram, Twelve Data):
+👉 **[GUIDE_CONFIGURATION_COMPLETE.md](./GUIDE_CONFIGURATION_COMPLETE.md)** - Configuration complète étape par étape ⭐  
+👉 **[CHECKLIST_RAPIDE.md](./CHECKLIST_RAPIDE.md)** - Checklist à cocher (20-30 minutes)
+
+#### 📖 Guides généraux:
+👉 **[GUIDE_DEBUTANT.md](./GUIDE_DEBUTANT.md)** - Guide complet pour débutants  
+👉 **[OBTENIR_OPENAI_API_KEY.md](./OBTENIR_OPENAI_API_KEY.md)** - Comment obtenir votre clé OpenAI
 
 ### Déploiement sur Render (Recommandé - 24/7)
 
@@ -80,8 +85,10 @@ Accédez au dashboard: `http://localhost:3000/dashboard`
 ## 📖 Documentation Complète
 
 ### 🎓 Pour Débutants
-- 📘 **[GUIDE_DEBUTANT.md](./GUIDE_DEBUTANT.md)** - Guide complet avec explications simples ⭐
-- 🔑 **[OBTENIR_OPENAI_API_KEY.md](./OBTENIR_OPENAI_API_KEY.md)** - Comment obtenir votre clé API
+- 🎯 **[GUIDE_CONFIGURATION_COMPLETE.md](./GUIDE_CONFIGURATION_COMPLETE.md)** - Configuration complète avec toutes les APIs ⭐⭐⭐
+- ✅ **[CHECKLIST_RAPIDE.md](./CHECKLIST_RAPIDE.md)** - Checklist de configuration (20-30 min)
+- 📘 **[GUIDE_DEBUTANT.md](./GUIDE_DEBUTANT.md)** - Guide complet avec explications simples
+- 🔑 **[OBTENIR_OPENAI_API_KEY.md](./OBTENIR_OPENAI_API_KEY.md)** - Comment obtenir votre clé API OpenAI
 
 ### Guides Techniques
 - 🚀 **[RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md)** - Déploiement 24/7 sur Render
@@ -107,14 +114,31 @@ OPENAI_API_KEY=sk-...              # Clé OpenAI
 
 # Trading
 TRADING_SYMBOL=BTCUSDT             # Symbole à trader
-DATA_PROVIDER=binance              # binance, coinbase, alphavantage
+DATA_PROVIDER=binance              # binance, coinbase, alphavantage, twelvedata
 UPDATE_INTERVAL=1000               # Fréquence d'analyse (ms)
+
+# API Keys pour données de marché
+MARKET_API_KEY=...                 # Pour Alpha Vantage, Polygon
+TWELVE_DATA_API_KEY=...            # Pour Twelve Data (or, stocks, forex)
 
 # Notifications (optionnel)
 TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
 WEBHOOK_URL=...
 ```
+
+### 🥇 Configuration pour l'Or (XAUUSD)
+
+```env
+DATA_PROVIDER=twelvedata
+TRADING_SYMBOL=XAUUSD
+TWELVE_DATA_API_KEY=votre-clé-ici
+UPDATE_INTERVAL=5000               # 5 sec (reste sous la limite gratuite)
+```
+
+**Autres métaux précieux:**
+- Argent: `XAGUSD`
+- Pétrole: `USOIL`
 
 Voir [.env.example](./.env.example) pour la configuration complète.
 
