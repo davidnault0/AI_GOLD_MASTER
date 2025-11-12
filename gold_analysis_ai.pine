@@ -1,0 +1,277 @@
+//@version=6
+indicator("AI Gold Master - Analyse Or en Temps Réel", overlay=true, max_bars_back=500)
+
+// ============================================================================
+// PARAMÈTRES CONFIGURABLES
+// ============================================================================
+
+// Moyennes Mobiles
+ema_fast_length = input.int(9, "EMA Rapide", minval=1, group="Moyennes Mobiles")
+ema_slow_length = input.int(21, "EMA Lente", minval=1, group="Moyennes Mobiles")
+ema_trend_length = input.int(50, "EMA Tendance", minval=1, group="Moyennes Mobiles")
+sma_long_length = input.int(200, "SMA Long Terme", minval=1, group="Moyennes Mobiles")
+
+// RSI
+rsi_length = input.int(14, "Période RSI", minval=1, group="RSI")
+rsi_overbought = input.int(70, "RSI Suracheté", minval=50, maxval=100, group="RSI")
+rsi_oversold = input.int(30, "RSI Survendu", minval=0, maxval=50, group="RSI")
+
+// MACD
+macd_fast = input.int(12, "MACD Rapide", minval=1, group="MACD")
+macd_slow = input.int(26, "MACD Lent", minval=1, group="MACD")
+macd_signal = input.int(9, "Signal MACD", minval=1, group="MACD")
+
+// Bandes de Bollinger
+bb_length = input.int(20, "Période BB", minval=1, group="Bollinger Bands")
+bb_mult = input.float(2.0, "Multiplicateur BB", minval=0.1, group="Bollinger Bands")
+
+// ATR pour volatilité
+atr_length = input.int(14, "Période ATR", minval=1, group="Volatilité")
+
+// Seuils de signal
+signal_strength_threshold = input.float(3.0, "Seuil Force Signal", minval=1.0, maxval=10.0, group="Signaux")
+
+// Affichage
+show_signals = input.bool(true, "Afficher Signaux", group="Affichage")
+show_zones = input.bool(true, "Afficher Zones Support/Résistance", group="Affichage")
+
+// ============================================================================
+// CALCULS DES INDICATEURS TECHNIQUES
+// ============================================================================
+
+// Moyennes Mobiles
+ema_fast = ta.ema(close, ema_fast_length)
+ema_slow = ta.ema(close, ema_slow_length)
+ema_trend = ta.ema(close, ema_trend_length)
+sma_long = ta.sma(close, sma_long_length)
+
+// RSI
+rsi = ta.rsi(close, rsi_length)
+
+// MACD
+[macd_line, signal_line, macd_hist] = ta.macd(close, macd_fast, macd_slow, macd_signal)
+
+// Bandes de Bollinger
+[bb_middle, bb_upper, bb_lower] = ta.bb(close, bb_length, bb_mult)
+
+// ATR (Average True Range) pour la volatilité
+atr = ta.atr(atr_length)
+
+// Stochastique
+stoch_k = ta.stoch(close, high, low, 14)
+stoch_d = ta.sma(stoch_k, 3)
+
+// Volume (si disponible)
+volume_sma = ta.sma(volume, 20)
+volume_ratio = volume / volume_sma
+
+// ============================================================================
+// ANALYSE DE TENDANCE
+// ============================================================================
+
+// Tendance basée sur les EMAs
+trend_bullish = ema_fast > ema_slow and ema_slow > ema_trend and close > ema_trend
+trend_bearish = ema_fast < ema_slow and ema_slow < ema_trend and close < ema_trend
+trend_neutral = not trend_bullish and not trend_bearish
+
+// Force de la tendance (0-100)
+trend_strength = math.abs((ema_fast - ema_slow) / close) * 100
+
+// ============================================================================
+// DÉTECTION DES SIGNAUX D'ACHAT/VENTE
+// ============================================================================
+
+// Score de signal (0-10)
+var float buy_score = 0.0
+var float sell_score = 0.0
+
+// Reset des scores
+buy_score := 0.0
+sell_score := 0.0
+
+// 1. Signal EMA Crossover (poids: 2 points)
+ema_cross_up = ta.crossover(ema_fast, ema_slow)
+ema_cross_down = ta.crossunder(ema_fast, ema_slow)
+if ema_cross_up
+    buy_score += 2.0
+if ema_cross_down
+    sell_score += 2.0
+
+// 2. Signal RSI (poids: 1.5 points)
+if rsi < rsi_oversold
+    buy_score += 1.5
+if rsi > rsi_overbought
+    sell_score += 1.5
+
+// 3. Signal MACD (poids: 1.5 points)
+macd_cross_up = ta.crossover(macd_line, signal_line)
+macd_cross_down = ta.crossunder(macd_line, signal_line)
+if macd_cross_up and macd_line < 0
+    buy_score += 1.5
+if macd_cross_down and macd_line > 0
+    sell_score += 1.5
+
+// 4. Signal Bandes de Bollinger (poids: 1 point)
+if close < bb_lower and close > close[1]
+    buy_score += 1.0
+if close > bb_upper and close < close[1]
+    sell_score += 1.0
+
+// 5. Signal Stochastique (poids: 1 point)
+if ta.crossover(stoch_k, stoch_d) and stoch_k < 20
+    buy_score += 1.0
+if ta.crossunder(stoch_k, stoch_d) and stoch_k > 80
+    sell_score += 1.0
+
+// 6. Confirmation Tendance (poids: 2 points)
+if trend_bullish and close > sma_long
+    buy_score += 2.0
+if trend_bearish and close < sma_long
+    sell_score += 2.0
+
+// 7. Volume (poids: 1 point)
+if volume_ratio > 1.2
+    if close > close[1]
+        buy_score += 1.0
+    else if close < close[1]
+        sell_score += 1.0
+
+// Génération des signaux finaux
+strong_buy = buy_score >= signal_strength_threshold and buy_score > sell_score
+strong_sell = sell_score >= signal_strength_threshold and sell_score > buy_score
+
+// ============================================================================
+// CALCUL DES ZONES DE SUPPORT ET RÉSISTANCE
+// ============================================================================
+
+// Support et Résistance dynamiques (basés sur pivots)
+pivot_high = ta.pivothigh(high, 5, 5)
+pivot_low = ta.pivotlow(low, 5, 5)
+
+var float resistance_level = na
+var float support_level = na
+
+if not na(pivot_high)
+    resistance_level := pivot_high
+if not na(pivot_low)
+    support_level := pivot_low
+
+// ============================================================================
+// AFFICHAGE GRAPHIQUE
+// ============================================================================
+
+// Tracer les moyennes mobiles
+plot(ema_fast, "EMA Rapide", color=color.rgb(0, 200, 255), linewidth=2)
+plot(ema_slow, "EMA Lente", color=color.rgb(255, 150, 0), linewidth=2)
+plot(ema_trend, "EMA Tendance", color=color.rgb(255, 0, 255), linewidth=2)
+plot(sma_long, "SMA 200", color=color.rgb(255, 255, 0), linewidth=3)
+
+// Tracer les bandes de Bollinger
+plot(bb_upper, "BB Supérieur", color=color.gray, linewidth=1)
+plot(bb_lower, "BB Inférieur", color=color.gray, linewidth=1)
+fill(plot(bb_upper), plot(bb_lower), color=color.new(color.gray, 95))
+
+// Zones de support et résistance
+if show_zones and not na(resistance_level)
+    line.new(bar_index[5], resistance_level, bar_index, resistance_level, 
+             color=color.red, width=1, style=line.style_dashed)
+if show_zones and not na(support_level)
+    line.new(bar_index[5], support_level, bar_index, support_level, 
+             color=color.green, width=1, style=line.style_dashed)
+
+// Afficher les signaux d'achat/vente
+if show_signals and strong_buy
+    label.new(bar_index, low, "ACHAT\n💰\nScore: " + str.tostring(buy_score, "#.#"), 
+              style=label.style_label_up, color=color.new(color.green, 0), 
+              textcolor=color.white, size=size.normal)
+    
+if show_signals and strong_sell
+    label.new(bar_index, high, "VENTE\n⚠️\nScore: " + str.tostring(sell_score, "#.#"), 
+              style=label.style_label_down, color=color.new(color.red, 0), 
+              textcolor=color.white, size=size.normal)
+
+// Coloration du fond selon la tendance
+bgcolor(trend_bullish ? color.new(color.green, 95) : 
+        trend_bearish ? color.new(color.red, 95) : 
+        color.new(color.gray, 97), title="Couleur Tendance")
+
+// ============================================================================
+// ALERTES
+// ============================================================================
+
+// Alertes pour signaux forts
+alertcondition(strong_buy, "Signal ACHAT Fort", "🟢 SIGNAL ACHAT - Score: {{plot_0}}")
+alertcondition(strong_sell, "Signal VENTE Fort", "🔴 SIGNAL VENTE - Score: {{plot_1}}")
+alertcondition(ema_cross_up, "Croisement EMA Haussier", "EMA Rapide croise EMA Lente à la hausse")
+alertcondition(ema_cross_down, "Croisement EMA Baissier", "EMA Rapide croise EMA Lente à la baisse")
+
+// ============================================================================
+// TABLE D'INFORMATION EN TEMPS RÉEL
+// ============================================================================
+
+var table info_table = table.new(position.top_right, 2, 10, 
+                                  border_width=2, border_color=color.gray,
+                                  frame_width=2, frame_color=color.gray)
+
+if barstate.islast
+    // Titre
+    table.cell(info_table, 0, 0, "AI GOLD MASTER", bgcolor=color.new(color.blue, 30), 
+               text_color=color.white, text_size=size.large)
+    table.cell(info_table, 1, 0, "XAUUSD", bgcolor=color.new(color.blue, 30), 
+               text_color=color.white, text_size=size.large)
+    
+    // Prix actuel
+    table.cell(info_table, 0, 1, "Prix", text_color=color.white)
+    table.cell(info_table, 1, 1, str.tostring(close, format.mintick), 
+               text_color=color.yellow, text_size=size.normal)
+    
+    // Tendance
+    table.cell(info_table, 0, 2, "Tendance", text_color=color.white)
+    trend_text = trend_bullish ? "🟢 HAUSSIÈRE" : trend_bearish ? "🔴 BAISSIÈRE" : "⚪ NEUTRE"
+    trend_color = trend_bullish ? color.green : trend_bearish ? color.red : color.gray
+    table.cell(info_table, 1, 2, trend_text, text_color=trend_color)
+    
+    // RSI
+    table.cell(info_table, 0, 3, "RSI", text_color=color.white)
+    rsi_color = rsi > rsi_overbought ? color.red : rsi < rsi_oversold ? color.green : color.white
+    table.cell(info_table, 1, 3, str.tostring(rsi, "#.#"), text_color=rsi_color)
+    
+    // MACD
+    table.cell(info_table, 0, 4, "MACD", text_color=color.white)
+    macd_color = macd_line > signal_line ? color.green : color.red
+    table.cell(info_table, 1, 4, str.tostring(macd_line, "#.##"), text_color=macd_color)
+    
+    // Scores
+    table.cell(info_table, 0, 5, "Score ACHAT", text_color=color.white)
+    table.cell(info_table, 1, 5, str.tostring(buy_score, "#.#"), 
+               bgcolor=buy_score >= signal_strength_threshold ? color.new(color.green, 70) : na,
+               text_color=color.green)
+    
+    table.cell(info_table, 0, 6, "Score VENTE", text_color=color.white)
+    table.cell(info_table, 1, 6, str.tostring(sell_score, "#.#"), 
+               bgcolor=sell_score >= signal_strength_threshold ? color.new(color.red, 70) : na,
+               text_color=color.red)
+    
+    // Volatilité
+    table.cell(info_table, 0, 7, "ATR", text_color=color.white)
+    table.cell(info_table, 1, 7, str.tostring(atr, "#.##"), text_color=color.orange)
+    
+    // Volume
+    table.cell(info_table, 0, 8, "Vol. Ratio", text_color=color.white)
+    vol_color = volume_ratio > 1.5 ? color.yellow : color.white
+    table.cell(info_table, 1, 8, str.tostring(volume_ratio, "#.##"), text_color=vol_color)
+    
+    // Signal actuel
+    table.cell(info_table, 0, 9, "SIGNAL", text_color=color.white, text_size=size.large)
+    signal_text = strong_buy ? "ACHAT 💰" : strong_sell ? "VENTE ⚠️" : "ATTENTE ⏸"
+    signal_color = strong_buy ? color.green : strong_sell ? color.red : color.gray
+    table.cell(info_table, 1, 9, signal_text, bgcolor=color.new(signal_color, 50),
+               text_color=color.white, text_size=size.large)
+
+// ============================================================================
+// PLOTS POUR LES ALERTES ET EXPORTS
+// ============================================================================
+
+plot(buy_score, "Score Achat", display=display.data_window)
+plot(sell_score, "Score Vente", display=display.data_window)
+plot(trend_strength, "Force Tendance", display=display.data_window)
