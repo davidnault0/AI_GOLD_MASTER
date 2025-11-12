@@ -3,6 +3,8 @@
 
 An advanced AI-powered 24/7 gold trading analysis system that continuously monitors gold markets, applies multiple trading strategies, and sends intelligent trading signals to your Telegram bot.
 
+> **⚡ Quick Start**: New users, see [QUICKSTART.md](QUICKSTART.md) for a 5-minute setup guide!
+
 ## 🌟 Features
 
 - **24/7 Continuous Analysis**: Monitors gold markets around the clock without interruption
