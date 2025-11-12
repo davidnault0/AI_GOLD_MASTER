@@ -159,6 +159,14 @@ analyzer.start();
 - Never invest more than you can afford to lose
 - Always use appropriate stop-loss orders
 
+## 🔒 Security Note
+
+Some dependencies (puppeteer) have known vulnerabilities. The `compile_pine_script.js` file using puppeteer is optional and not required for the main analysis functionality. For production use:
+- Use the main analysis module (`gold_analysis_ai.js`) which doesn't require puppeteer
+- Integrate with real market data APIs (Alpha Vantage, Twelve Data, etc.)
+- Run `npm audit` regularly to check for vulnerabilities
+- Keep dependencies updated
+
 ## 🔄 Roadmap
 
 - [ ] Real API integration (Alpha Vantage, Twelve Data)

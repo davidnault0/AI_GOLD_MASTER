@@ -199,6 +199,14 @@ AI_GOLD_MASTER/
 - Ne jamais investir plus que ce que vous pouvez vous permettre de perdre
 - Utilisez toujours un stop-loss approprié
 
+### Note de Sécurité
+
+Certaines dépendances (puppeteer) ont des vulnérabilités connues. Le fichier `compile_pine_script.js` utilisant puppeteer est optionnel et n'est pas requis pour la fonctionnalité principale d'analyse. Pour une utilisation en production :
+- Utilisez le module d'analyse principal (`gold_analysis_ai.js`) qui ne nécessite pas puppeteer
+- Intégrez avec des APIs de données de marché réelles (Alpha Vantage, Twelve Data, etc.)
+- Exécutez `npm audit` régulièrement pour vérifier les vulnérabilités
+- Maintenez les dépendances à jour
+
 ## 🔄 Prochaines Améliorations
 
 - [ ] Intégration API réelle pour données en temps réel (Alpha Vantage, Twelve Data)
