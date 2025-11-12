@@ -29,22 +29,31 @@ Bot de trading automatisé avec intelligence artificielle pour analyse de march�
 
 ## 🏃 Démarrage Rapide
 
+### 🎓 Nouveau? Commencez ici!
+
+**Vous n'êtes pas très doué avec la programmation? Pas de problème!**
+
+👉 **[GUIDE_DEBUTANT.md](./GUIDE_DEBUTANT.md)** - Guide complet pour débutants (explications simples)  
+👉 **[OBTENIR_OPENAI_API_KEY.md](./OBTENIR_OPENAI_API_KEY.md)** - Comment obtenir votre clé API OpenAI
+
 ### Déploiement sur Render (Recommandé - 24/7)
 
 **Le plus simple pour avoir un bot actif 24/7!**
 
-1. **Fork ce repository** sur votre compte GitHub
+1. **Obtenir votre clé OpenAI** - Voir [OBTENIR_OPENAI_API_KEY.md](./OBTENIR_OPENAI_API_KEY.md)
 
-2. **Créer un compte sur Render** (gratuit): [https://render.com](https://render.com)
+2. **Fork ce repository** sur votre compte GitHub
 
-3. **Déployer en un clic**:
+3. **Créer un compte sur Render** (gratuit): [https://render.com](https://render.com)
+
+4. **Déployer en un clic**:
    - Connectez votre GitHub à Render
    - Sélectionnez ce repository
    - Render détecte automatiquement `render.yaml`
    - Ajoutez votre clé `OPENAI_API_KEY`
    - Cliquez sur "Create Web Service"
 
-4. **C'est tout!** Votre bot est en ligne 24/7 🎉
+5. **C'est tout!** Votre bot est en ligne 24/7 🎉
 
 👉 **Guide complet**: [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md)
 
@@ -70,11 +79,16 @@ Accédez au dashboard: `http://localhost:3000/dashboard`
 
 ## 📖 Documentation Complète
 
-### Guides Principaux
+### 🎓 Pour Débutants
+- 📘 **[GUIDE_DEBUTANT.md](./GUIDE_DEBUTANT.md)** - Guide complet avec explications simples ⭐
+- 🔑 **[OBTENIR_OPENAI_API_KEY.md](./OBTENIR_OPENAI_API_KEY.md)** - Comment obtenir votre clé API
+
+### Guides Techniques
 - 🚀 **[RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md)** - Déploiement 24/7 sur Render
 - 📊 **[AI_MODEL_COMPARISON.md](./AI_MODEL_COMPARISON.md)** - Comparaison GPT-4o vs Qwen 3
 - 🐧 **[QWEN3_DEPLOYMENT.md](./QWEN3_DEPLOYMENT.md)** - Déploiement Qwen 3 local
 - ⚡ **[QUICKSTART.md](./QUICKSTART.md)** - Guide de démarrage rapide
+- 📋 **[SOLUTION_COMPLETE.md](./SOLUTION_COMPLETE.md)** - Vue d'ensemble complète
 
 ### Fichiers Principaux
 - `trading-bot-24-7.js` - Bot principal 24/7
