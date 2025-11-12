@@ -1,4 +1,5 @@
 const logger = require('../logger');
+const GoldOptimizedStrategy = require('./goldOptimized');
 const SMACrossoverStrategy = require('./smaCrossover');
 const RSIStrategy = require('./rsiStrategy');
 const BollingerBandsStrategy = require('./bollingerBands');
@@ -6,10 +7,13 @@ const MACDStrategy = require('./macdStrategy');
 
 /**
  * Strategy Selector - Chooses the best strategy based on current market conditions
+ * Now includes Gold-Optimized Trend-Pullback strategy as primary strategy
  */
 class StrategySelector {
     constructor() {
+        // Gold-Optimized strategy is listed first and given priority in scoring
         this.strategies = [
+            new GoldOptimizedStrategy(),    // PRIMARY: Research-backed gold strategy
             new SMACrossoverStrategy(),
             new RSIStrategy(),
             new BollingerBandsStrategy(),
@@ -41,15 +45,21 @@ class StrategySelector {
         }
 
         // Calculate combined score for each signal
-        // Score = (confidence * 0.6) + (performance * 0.3) + (market_alignment * 0.1)
+        // Gold-Optimized strategy gets a bonus for being research-backed
         const scoredSignals = signals.map(signal => {
             const marketAlignment = this.calculateMarketAlignment(signal.action, marketTrend);
             const volatilityAdjustment = this.calculateVolatilityAdjustment(signal.action, volatility);
             
-            const score = (signal.confidence * 0.5) + 
-                         (signal.performanceScore * 0.3) + 
-                         (marketAlignment * 0.1) +
-                         (volatilityAdjustment * 0.1);
+            // Base score calculation
+            let score = (signal.confidence * 0.5) + 
+                       (signal.performanceScore * 0.3) + 
+                       (marketAlignment * 0.1) +
+                       (volatilityAdjustment * 0.1);
+            
+            // Give 10% bonus to Gold-Optimized strategy (research-backed)
+            if (signal.strategy === 'Gold-Optimized Trend-Pullback') {
+                score *= 1.10;
+            }
             
             return {
                 ...signal,

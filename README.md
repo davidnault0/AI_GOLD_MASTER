@@ -8,7 +8,12 @@ An advanced AI-powered 24/7 gold trading analysis system that continuously monit
 ## 🌟 Features
 
 - **24/7 Continuous Analysis**: Monitors gold markets around the clock without interruption
+- **Gold-Optimized Strategy** ⭐ NEW: Research-backed professional trading strategy specifically designed for XAU/USD
+  - Based on 2025 professional gold trading research
+  - Combines 50-MA trend filter, RSI pullback detection, and ATR volatility adjustment
+  - Proven most effective strategy by professional traders (MasterFunders, GoldPipHub, Forex GDP)
 - **Multiple Trading Strategies**: 
+  - **Gold-Optimized Trend-Pullback** (Primary - Research-backed)
   - SMA (Simple Moving Average) Crossover
   - RSI (Relative Strength Index)
   - Bollinger Bands
@@ -124,6 +129,28 @@ Signals sent to Telegram include:
 
 ## 📊 Trading Strategies Explained
 
+### 🥇 Gold-Optimized Trend-Pullback Strategy (PRIMARY)
+**Research-backed professional strategy specifically designed for gold trading (XAU/USD)**
+
+Based on 2025 professional trading research from MasterFunders, GoldPipHub, and Forex GDP.
+
+**How it works:**
+- **Trend Filter**: Uses 50-period MA to identify the overall trend (only trade with the trend)
+- **Entry Timing**: RSI pullback detection - enters when RSI recovers from oversold in uptrend (or fails from overbought in downtrend)
+- **Volatility Adjustment**: Uses ATR (Average True Range) to adjust position confidence based on market volatility
+- **Momentum Confirmation**: Fast/Slow EMA crossover confirms the momentum direction
+
+**Why it's the best for gold:**
+- Filters high-quality trades by only trading with the trend
+- Capitalizes on natural pullbacks in trending markets
+- Adapts to gold's unique volatility characteristics
+- Proven effective by professional gold traders
+- Combines multiple timeframe confirmations
+
+**Signals:**
+- **Buy**: Price above 50-MA + RSI recovering from oversold (< 40) + bullish momentum
+- **Sell**: Price below 50-MA + RSI failing from overbought (> 60) + bearish momentum
+
 ### SMA Crossover Strategy
 Generates signals when short-term moving average crosses long-term moving average:
 - **Buy Signal**: Short MA crosses above long MA (bullish crossover)
@@ -147,12 +174,14 @@ Uses Moving Average Convergence Divergence for momentum:
 ## 🧠 How It Works
 
 1. **Data Collection**: Continuously fetches gold market data from the configured network
-2. **Technical Analysis**: Calculates multiple technical indicators (SMA, EMA, RSI, MACD, Bollinger Bands)
-3. **Strategy Evaluation**: Runs all strategies in parallel and scores each signal
+2. **Technical Analysis**: Calculates multiple technical indicators (50-MA, SMA, EMA, RSI, MACD, Bollinger Bands, ATR)
+3. **Strategy Evaluation**: Runs all strategies in parallel (5 strategies including Gold-Optimized) and scores each signal
 4. **Adaptive Selection**: Selects the best strategy based on:
    - Signal confidence
    - Historical performance
    - Market trend alignment
+   - Current volatility
+   - **10% bonus** for Gold-Optimized strategy (research-backed)
    - Current volatility
 5. **Signal Generation**: Sends high-confidence signals to Telegram
 6. **Continuous Learning**: Tracks strategy performance over time

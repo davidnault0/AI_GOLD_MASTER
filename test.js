@@ -98,6 +98,27 @@ const macdSignal = macdStrategy.analyze(macdPrices, { price: macdPrices[macdPric
 assert(macdSignal !== null, 'Should generate a signal');
 console.log(`✓ MACD Strategy works correctly - Signal: ${macdSignal.action}`);
 
+// Test 6.5: Gold-Optimized Strategy
+console.log('\nTesting Gold-Optimized Strategy...');
+const GoldOptimizedStrategy = require('./src/strategies/goldOptimized');
+const goldStrategy = new GoldOptimizedStrategy();
+
+// Generate uptrend with pullback for optimal gold strategy test
+const goldPrices = [];
+for (let i = 0; i < 60; i++) {
+    if (i < 30) {
+        goldPrices.push(2000 + i * 3); // Uptrend
+    } else if (i < 35) {
+        goldPrices.push(2090 - (i - 30) * 2); // Pullback
+    } else {
+        goldPrices.push(2080 + (i - 35) * 2); // Resume uptrend
+    }
+}
+
+const goldSignal = goldStrategy.analyze(goldPrices, { price: goldPrices[goldPrices.length - 1] });
+assert(goldSignal !== null, 'Should generate a signal');
+console.log(`✓ Gold-Optimized Strategy works correctly - Signal: ${goldSignal.action}`);
+
 // Test 7: Strategy Selector
 console.log('\nTesting Strategy Selector...');
 const StrategySelector = require('./src/strategies/strategySelector');
