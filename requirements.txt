@@ -1,5 +1,5 @@
 # Core dependencies
-aiohttp>=3.9.0
+aiohttp>=3.9.4  # Security: CVE fixes for directory traversal and DoS
 python-dotenv>=1.0.0
 
 # Testing
