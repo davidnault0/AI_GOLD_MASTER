@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node compile_pine_script.js"
+    "test": "node test.js"
   },
   "dependencies": {
     "puppeteer": "^20.0.0",
