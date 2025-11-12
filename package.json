@@ -1,12 +1,18 @@
 {
   "name": "ai_gold_master",
   "version": "1.0.0",
-  "description": "Automated testing for Pine Script using Puppeteer.",
-  "main": "compile_pine_script.js",
+  "description": "AI-powered 24/7 Gold Trading Analysis System with Telegram Integration",
+  "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
     "test": "node compile_pine_script.js"
   },
   "dependencies": {
-    "puppeteer": "^20.0.0"
+    "puppeteer": "^20.0.0",
+    "axios": "^1.6.0",
+    "node-telegram-bot-api": "^0.64.0",
+    "dotenv": "^16.3.1",
+    "technicalindicators": "^3.1.0",
+    "winston": "^3.11.0"
   }
 }

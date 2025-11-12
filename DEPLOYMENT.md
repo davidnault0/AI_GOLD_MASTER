@@ -1,0 +1,301 @@
+# Deployment Guide for AI Gold Master
+
+This guide explains how to deploy and run the AI Gold Master system on a server (like Render.com, Heroku, or a VPS).
+
+## Prerequisites
+
+- A server or cloud hosting account (Render.com, Heroku, DigitalOcean, AWS, etc.)
+- Node.js installed on the server
+- Telegram Bot Token and Chat ID configured
+
+## Option 1: Deploy on Render.com
+
+### Step 1: Prepare Your Repository
+
+1. Ensure your code is pushed to GitHub
+2. Make sure `.env.example` is in the repository but NOT `.env`
+
+### Step 2: Create a Web Service on Render
+
+1. Go to https://render.com and sign in
+2. Click "New +" and select "Web Service"
+3. Connect your GitHub repository
+4. Configure the service:
+   - **Name**: `ai-gold-master`
+   - **Environment**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+   - **Plan**: Select your preferred plan
+
+### Step 3: Add Environment Variables
+
+In Render's dashboard, add these environment variables:
+
+```
+TELEGRAM_BOT_TOKEN=<your_telegram_bot_token>
+TELEGRAM_CHAT_ID=<your_telegram_chat_id>
+TRADING_NETWORK_URL=https://coach-pine-cloud.onrender.com
+ANALYSIS_INTERVAL_MS=60000
+MIN_CONFIDENCE_THRESHOLD=0.75
+LOG_LEVEL=info
+```
+
+### Step 4: Deploy
+
+Click "Create Web Service" and Render will automatically deploy your application.
+
+## Option 2: Deploy on a VPS (Ubuntu/Debian)
+
+### Step 1: Connect to Your Server
+
+```bash
+ssh user@your-server-ip
+```
+
+### Step 2: Install Node.js
+
+```bash
+# Install Node.js 18.x
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Verify installation
+node --version
+npm --version
+```
+
+### Step 3: Clone and Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/davidnault0/AI_GOLD_MASTER.git
+cd AI_GOLD_MASTER
+
+# Install dependencies
+npm install
+
+# Create .env file
+cp .env.example .env
+nano .env  # Edit with your credentials
+```
+
+### Step 4: Install PM2 (Process Manager)
+
+```bash
+# Install PM2 globally
+sudo npm install -g pm2
+
+# Start the application
+pm2 start src/index.js --name "ai-gold-master"
+
+# Configure PM2 to start on system boot
+pm2 startup
+pm2 save
+```
+
+### Step 5: Monitor the Application
+
+```bash
+# View logs
+pm2 logs ai-gold-master
+
+# Check status
+pm2 status
+
+# Restart the application
+pm2 restart ai-gold-master
+
+# Stop the application
+pm2 stop ai-gold-master
+```
+
+## Option 3: Docker Deployment
+
+### Create a Dockerfile
+
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --production
+
+COPY . .
+
+# Create logs directory
+RUN mkdir -p logs
+
+CMD ["npm", "start"]
+```
+
+### Create docker-compose.yml
+
+```yaml
+version: '3.8'
+
+services:
+  ai-gold-master:
+    build: .
+    restart: always
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - TRADING_NETWORK_URL=https://coach-pine-cloud.onrender.com
+      - ANALYSIS_INTERVAL_MS=60000
+      - MIN_CONFIDENCE_THRESHOLD=0.75
+      - LOG_LEVEL=info
+    volumes:
+      - ./logs:/app/logs
+```
+
+### Deploy with Docker
+
+```bash
+# Create .env file with your credentials
+cp .env.example .env
+nano .env
+
+# Build and run
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+## Monitoring and Maintenance
+
+### Check Logs
+
+Logs are stored in the `logs/` directory:
+- `logs/combined.log` - All logs
+- `logs/error.log` - Error logs only
+
+### View Real-time Logs
+
+If using PM2:
+```bash
+pm2 logs ai-gold-master --lines 100
+```
+
+If using Docker:
+```bash
+docker-compose logs -f --tail=100
+```
+
+### Restart the Service
+
+If using PM2:
+```bash
+pm2 restart ai-gold-master
+```
+
+If using Docker:
+```bash
+docker-compose restart
+```
+
+If using systemd (manual setup):
+```bash
+sudo systemctl restart ai-gold-master
+```
+
+## Updating the Application
+
+### Using Git
+
+```bash
+cd AI_GOLD_MASTER
+git pull origin main
+npm install
+pm2 restart ai-gold-master
+```
+
+### Using Docker
+
+```bash
+cd AI_GOLD_MASTER
+git pull origin main
+docker-compose down
+docker-compose build
+docker-compose up -d
+```
+
+## Troubleshooting
+
+### Application not starting
+
+1. Check Node.js version: `node --version` (should be 14+)
+2. Verify dependencies: `npm install`
+3. Check environment variables in `.env`
+4. Review error logs: `pm2 logs` or check `logs/error.log`
+
+### Not receiving Telegram messages
+
+1. Verify bot token is correct
+2. Ensure you've started a chat with your bot
+3. Check chat ID is correct
+4. Test bot manually: send `/start` command
+
+### High CPU usage
+
+1. Increase `ANALYSIS_INTERVAL_MS` to reduce frequency
+2. Check for infinite loops in logs
+3. Monitor with: `pm2 monit`
+
+### Memory issues
+
+1. Monitor memory: `pm2 monit`
+2. Restart periodically: `pm2 restart ai-gold-master --cron "0 */6 * * *"` (every 6 hours)
+
+## Security Recommendations
+
+1. **Never commit `.env` file** - It contains sensitive credentials
+2. **Use strong bot tokens** - Generated by Telegram
+3. **Limit bot access** - Only share with trusted chat IDs
+4. **Keep dependencies updated**: `npm audit fix`
+5. **Use HTTPS** - Ensure secure connections to APIs
+6. **Monitor logs** - Watch for suspicious activity
+7. **Backup configuration** - Save your `.env` securely
+
+## Performance Tuning
+
+### Adjust Analysis Frequency
+
+For high-frequency trading:
+```env
+ANALYSIS_INTERVAL_MS=30000  # 30 seconds
+```
+
+For conservative trading:
+```env
+ANALYSIS_INTERVAL_MS=300000  # 5 minutes
+```
+
+### Adjust Confidence Threshold
+
+For more signals:
+```env
+MIN_CONFIDENCE_THRESHOLD=0.65
+```
+
+For fewer, high-quality signals:
+```env
+MIN_CONFIDENCE_THRESHOLD=0.85
+```
+
+## Support
+
+For deployment issues:
+1. Check the logs first
+2. Verify your environment variables
+3. Ensure the trading network URL is accessible
+4. Review this deployment guide again
+5. Open an issue on GitHub with logs and details
+
+---
+
+**Happy Trading! 🚀**
