@@ -277,17 +277,26 @@ class MarketDataConnector {
         let basePrice = 50000; // Par défaut pour crypto
         
         // Adapter le prix de base selon le symbole
-        if (this.symbol.includes('XAU') || this.symbol.toLowerCase().includes('gold')) {
+        console.log(`🔍 Détection du symbole: ${this.symbol}`);
+        if (this.symbol.toUpperCase().includes('XAU') || this.symbol.toLowerCase().includes('gold')) {
             basePrice = 2650; // Prix approximatif de l'or en USD/once
-        } else if (this.symbol.includes('XAG') || this.symbol.toLowerCase().includes('silver')) {
+            console.log(`💰 Or détecté: prix de base = $${basePrice}`);
+        } else if (this.symbol.toUpperCase().includes('XAG') || this.symbol.toLowerCase().includes('silver')) {
             basePrice = 31; // Prix approximatif de l'argent
-        } else if (this.symbol.includes('BTC')) {
+            console.log(`🪙 Argent détecté: prix de base = $${basePrice}`);
+        } else if (this.symbol.toUpperCase().includes('BTC')) {
             basePrice = 95000; // Prix approximatif Bitcoin
-        } else if (this.symbol.includes('ETH')) {
+            console.log(`₿ Bitcoin détecté: prix de base = $${basePrice}`);
+        } else if (this.symbol.toUpperCase().includes('ETH')) {
             basePrice = 3500; // Prix approximatif Ethereum
+            console.log(`Ξ Ethereum détecté: prix de base = $${basePrice}`);
+        } else {
+            console.log(`❓ Symbole inconnu, utilisation du prix crypto par défaut: $${basePrice}`);
         }
         
         const price = basePrice + (Math.random() - 0.5) * (basePrice * 0.002); // Variation de 0.2%
+        
+        console.log(`📊 Prix de secours généré: $${price.toFixed(2)}`);
         
         return {
             symbol: this.symbol,
