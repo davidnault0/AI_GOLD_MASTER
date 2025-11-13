@@ -22,6 +22,8 @@ class MarketDataConnector {
      */
     async fetchRealTimeData() {
         switch (this.provider) {
+            case 'oanda':
+                return await this.fetchOandaData();
             case 'binance':
                 return await this.fetchBinanceData();
             case 'coinbase':
@@ -70,6 +72,66 @@ class MarketDataConnector {
             return marketData;
         } catch (error) {
             console.error('❌ Erreur Binance:', error.message);
+            return this.getFallbackData();
+        }
+    }
+
+    /**
+     * Oanda: Données de marché Forex et métaux précieux
+     */
+    async fetchOandaData() {
+        try {
+            const apiKey = process.env.OANDA_API_KEY;
+            const accountId = process.env.OANDA_ACCOUNT_ID;
+            
+            if (!apiKey || !accountId) {
+                throw new Error('OANDA_API_KEY et OANDA_ACCOUNT_ID sont requis');
+            }
+
+            // Oanda API endpoint (practice or live)
+            const baseUrl = process.env.OANDA_PRACTICE === 'true' 
+                ? 'https://api-fxpractice.oanda.com' 
+                : 'https://api-fxtrade.oanda.com';
+            
+            const url = `${baseUrl}/v3/accounts/${accountId}/pricing?instruments=${this.symbol}`;
+            
+            const response = await this.makeHttpRequest(url, {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response || !response.prices || response.prices.length === 0) {
+                throw new Error('Données Oanda invalides');
+            }
+
+            const priceData = response.prices[0];
+            
+            // Oanda returns bid/ask prices
+            const price = (parseFloat(priceData.closeoutBid) + parseFloat(priceData.closeoutAsk)) / 2;
+            
+            console.log(`✅ Prix ${this.symbol}: $${price.toFixed(2)}`);
+            
+            const marketData = {
+                symbol: this.symbol,
+                price: price,
+                bid: parseFloat(priceData.closeoutBid),
+                ask: parseFloat(priceData.closeoutAsk),
+                timestamp: new Date(priceData.time).getTime(),
+                volume: 0, // Oanda doesn't provide volume in pricing endpoint
+                provider: 'oanda',
+                high24h: price,
+                low24h: price,
+                change24h: 0
+            };
+            
+            // Mettre en cache
+            this.cache.lastData = marketData;
+            
+            return marketData;
+        } catch (error) {
+            console.error(`❌ Erreur Oanda:`, error.message);
             return this.getFallbackData();
         }
     }
@@ -236,12 +298,21 @@ class MarketDataConnector {
     /**
      * Faire une requête HTTP
      */
-    makeHttpRequest(url) {
+    makeHttpRequest(url, options = {}) {
         return new Promise((resolve, reject) => {
             const isHttps = url.startsWith('https');
             const lib = isHttps ? https : http;
+            const parsedUrl = new URL(url);
             
-            lib.get(url, (res) => {
+            const requestOptions = {
+                hostname: parsedUrl.hostname,
+                port: parsedUrl.port || (isHttps ? 443 : 80),
+                path: parsedUrl.pathname + parsedUrl.search,
+                method: options.method || 'GET',
+                headers: options.headers || {}
+            };
+            
+            const req = lib.request(requestOptions, (res) => {
                 let data = '';
                 
                 res.on('data', (chunk) => {
@@ -255,9 +326,13 @@ class MarketDataConnector {
                         reject(new Error('Erreur de parsing JSON'));
                     }
                 });
-            }).on('error', (error) => {
+            });
+            
+            req.on('error', (error) => {
                 reject(error);
             });
+            
+            req.end();
         });
     }
 
