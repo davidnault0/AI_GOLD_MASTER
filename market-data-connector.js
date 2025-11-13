@@ -180,8 +180,16 @@ class MarketDataConnector {
         try {
             const data = await this.makeHttpRequest(url);
             
+            // Vérifier si l'API retourne une erreur
+            if (data.status === 'error' || data.code) {
+                console.error('❌ Erreur API Twelve Data:', data.message || data.code);
+                console.log('💡 Vérifiez: 1) Votre clé API, 2) Le symbole (XAUUSD pour l\'or), 3) Les limites du plan gratuit (800 req/jour)');
+                throw new Error(data.message || 'Erreur API Twelve Data');
+            }
+            
             if (!data || !data.price) {
-                throw new Error('Données Twelve Data invalides');
+                console.error('❌ Réponse Twelve Data invalide:', JSON.stringify(data).substring(0, 200));
+                throw new Error('Données Twelve Data invalides - pas de prix');
             }
             
             const price = parseFloat(data.price);
@@ -192,6 +200,10 @@ class MarketDataConnector {
             
             try {
                 quoteData = await this.makeHttpRequest(quoteUrl);
+                if (quoteData.status === 'error' || quoteData.code) {
+                    console.warn('⚠️  Impossible de récupérer les stats complètes:', quoteData.message || quoteData.code);
+                    quoteData = null;
+                }
             } catch (err) {
                 console.warn('⚠️  Impossible de récupérer les stats complètes');
             }
@@ -211,6 +223,8 @@ class MarketDataConnector {
             
             // Mettre en cache
             this.cache.lastData = marketData;
+            
+            console.log(`✅ Prix ${this.symbol}: $${price.toFixed(2)}`);
             
             return marketData;
         } catch (error) {
@@ -254,24 +268,37 @@ class MarketDataConnector {
         console.log('⚠️  Utilisation des données de secours');
         
         // Utiliser les dernières données en cache si disponibles
-        if (this.cache.lastData && Date.now() - this.cache.lastData.timestamp < 60000) {
+        if (this.cache.lastData && Date.now() - this.cache.lastData.timestamp < 300000) { // 5 minutes
+            console.log('📦 Cache valide trouvé, utilisation des dernières données connues');
             return this.cache.lastData;
         }
         
-        // Sinon, générer des données simulées
-        const basePrice = 50000;
-        const price = basePrice + (Math.random() - 0.5) * 100;
+        // Sinon, générer des données simulées basées sur le symbole
+        let basePrice = 50000; // Par défaut pour crypto
+        
+        // Adapter le prix de base selon le symbole
+        if (this.symbol.includes('XAU') || this.symbol.toLowerCase().includes('gold')) {
+            basePrice = 2650; // Prix approximatif de l'or en USD/once
+        } else if (this.symbol.includes('XAG') || this.symbol.toLowerCase().includes('silver')) {
+            basePrice = 31; // Prix approximatif de l'argent
+        } else if (this.symbol.includes('BTC')) {
+            basePrice = 95000; // Prix approximatif Bitcoin
+        } else if (this.symbol.includes('ETH')) {
+            basePrice = 3500; // Prix approximatif Ethereum
+        }
+        
+        const price = basePrice + (Math.random() - 0.5) * (basePrice * 0.002); // Variation de 0.2%
         
         return {
             symbol: this.symbol,
             price: price,
             timestamp: Date.now(),
             volume: 1000 + Math.random() * 500,
-            bid: price - 0.5,
-            ask: price + 0.5,
-            high24h: price * 1.02,
-            low24h: price * 0.98,
-            change24h: (Math.random() - 0.5) * 5,
+            bid: price * 0.9999,
+            ask: price * 1.0001,
+            high24h: price * 1.01,
+            low24h: price * 0.99,
+            change24h: (Math.random() - 0.5) * 2,
             isFallback: true
         };
     }
