@@ -1,0 +1,34 @@
+services:
+  # Trading Bot 24/7 Service
+  - type: web
+    name: ai-trading-bot
+    env: node
+    region: oregon
+    plan: starter # Gratuit pour commencer, upgrade vers standard pour production
+    buildCommand: npm install
+    startCommand: node trading-bot-24-7.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRADING_SYMBOL
+        value: BTCUSDT
+      - key: AI_MODEL
+        value: gpt-4o
+      - key: UPDATE_INTERVAL
+        value: 1000
+      - key: DATA_PROVIDER
+        value: binance
+      # Variables sensibles à définir dans le dashboard Render
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MARKET_API_KEY
+        sync: false
+      - key: TWELVE_DATA_API_KEY
+        sync: false
+      - key: WEBHOOK_URL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
